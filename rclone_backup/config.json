@@ -1,0 +1,59 @@
+{
+  "name": "Rclone Backup",
+  "version": "0.1.0",
+  "slug": "rclone_backup",
+  "description": "Automatically sync backup to remote locations using rclone",
+  "arch": [
+    "armhf",
+    "armv7",
+    "aarch64",
+    "amd64",
+    "i386"
+  ],
+  "url": "https://github.com/jcwillox/hassio-rclone-backup",
+  "startup": "application",
+  "boot": "auto",
+  "map": [
+    "backup:rw",
+    "share:rw",
+    "ssl:rw",
+    "config:rw"
+  ],
+  "options": {
+    "rclone": {
+      "enabled": true,
+      "schedule": "0 4 * * *",
+      "command": "sync",
+      "source": "/backup",
+      "destination": "google:/Backup/Home Assistant",
+      "include": [],
+      "exclude": [],
+      "flags": "",
+      "dry_run": false,
+      "config_path": "/share/rclone.conf"
+    },
+    "rename": {
+      "enabled": false,
+      "schedule": "0 4 * * *"
+    }
+  },
+  "schema": {
+    "rclone": {
+      "enabled": "bool",
+      "schedule": "str",
+      "command": "str",
+      "source": "str",
+      "destination": "str",
+      "include": ["str"],
+      "exclude": ["str"],
+      "flags": "str?",
+      "dry_run": "bool?",
+      "config_path": "str"
+    },
+    "rename": {
+      "enabled": "bool",
+      "schedule": "str"
+    }
+  },
+  "image": "jcwillox/hassio-rclone-backup-{arch}"
+}
