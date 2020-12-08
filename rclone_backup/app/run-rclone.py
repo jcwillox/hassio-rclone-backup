@@ -49,7 +49,7 @@ if rclone["enabled"]:
         cmd += " --dry-run"
 
     if rclone["flags"]:
-        cmd += rclone["flags"]
+        cmd += " " + rclone["flags"]
 
     print(f"[RCLONE] {cmd}")
 
