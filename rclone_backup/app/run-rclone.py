@@ -45,10 +45,10 @@ if rclone["enabled"]:
     for exclude in rclone["exclude"]:
         cmd += f" --exclude='{exclude}'"
 
-    if rclone["dry_run"]:
+    if rclone.get("dry_run"):
         cmd += " --dry-run"
 
-    if rclone["flags"]:
+    if rclone.get("flags"):
         cmd += " " + rclone["flags"]
 
     print(f"[RCLONE] {cmd}")
