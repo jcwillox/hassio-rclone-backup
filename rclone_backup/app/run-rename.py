@@ -1,13 +1,11 @@
-#!/usr/bin/env python3
 import json
-import tarfile
 import os
-
+import tarfile
+from datetime import datetime
 from os import listdir
 from os.path import isfile
-from slugify import slugify
-from datetime import datetime
 
+from slugify import slugify
 
 CONFIG_PATH = "/data/options.json"
 BACKUP_PATH = "/backup"
@@ -22,16 +20,11 @@ if not config["rename"]["enabled"]:
 
 print(f"[RENAME] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-
-def slugify_filename(name):
-    return slugify(name, lowercase=False, separator="_") + ".tar"
-
-
 for snapshot in listdir():
     with tarfile.open(snapshot, "r:") as file:
         data = json.loads(file.extractfile("./snapshot.json").read())
     name, slug = data["name"], data["slug"]
-    filename = slugify_filename(name)
+    filename = slugify(name, lowercase=False, separator="_") + ".tar"
     if snapshot != filename and not isfile(filename):
         os.rename(snapshot, filename)
         print(f"[RENAME] '{snapshot}' to '{filename}'")

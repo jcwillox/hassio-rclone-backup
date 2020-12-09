@@ -1,11 +1,8 @@
-#!/usr/bin/env python3
 import json
-import tarfile
 import os
-
+import tarfile
 from os import listdir
 from os.path import isfile
-
 
 BACKUP_PATH = "/backup"
 

@@ -1,9 +1,7 @@
-import os
 import json
 import subprocess
-from subprocess import STDOUT, CalledProcessError
-
 from datetime import datetime
+from subprocess import STDOUT, CalledProcessError
 
 CONFIG_PATH = "/data/options.json"
 
