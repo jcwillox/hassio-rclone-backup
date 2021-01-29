@@ -1,7 +1,8 @@
 import json
 import subprocess
+import sys
 from datetime import datetime
-from subprocess import STDOUT, CalledProcessError
+from subprocess import CalledProcessError
 
 CONFIG_PATH = "/data/options.json"
 
@@ -16,10 +17,10 @@ print(f"[RCLONE] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print("[RCLONE] Renaming snapshots...")
 
 try:
-    output = subprocess.check_output("python /run-rename.py", stderr=STDOUT, shell=True)
-    print(output.decode())
+    subprocess.run(
+        [sys.executable, "/run-rename.py"], stdout=True, stderr=True, check=True
+    )
 except CalledProcessError as ex:
-    print(ex.output.decode())
     print(f"[RCLONE] Rename Failed!")
 
 print("[RCLONE] Running rclone...")
@@ -52,10 +53,8 @@ if rclone["enabled"]:
     print(f"[RCLONE] {cmd}")
 
     try:
-        output = subprocess.check_output(cmd, stderr=STDOUT, shell=True)
-        print(output.decode())
+        subprocess.run(cmd, stdout=True, stderr=True, check=True, shell=True)
     except CalledProcessError as ex:
-        print(ex.output.decode())
         print(f"[RCLONE] Rclone Failed!")
 
 
