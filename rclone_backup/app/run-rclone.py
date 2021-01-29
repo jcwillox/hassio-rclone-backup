@@ -35,7 +35,7 @@ if rclone["enabled"]:
     destination = rclone["destination"]
     config_path = rclone["config_path"]
 
-    cmd = f"rclone {command} '{source}' '{destination}' --config '{config_path}'"
+    cmd = f"rclone {command} '{source}' '{destination}' --config '{config_path}' --verbose"
 
     for include in rclone["include"]:
         cmd += f" --include='{include}'"
