@@ -2,7 +2,7 @@
 
 echo $(rclone -V)
 
-echo "$(bashio::config rclone.schedule) stdout python '/run-rclone.py'" >> /etc/crontabs/root
+echo "$(bashio::config schedule) stdout python '/run-rclone.py'" > /etc/crontabs/root
 
 cat /etc/crontabs/root
 

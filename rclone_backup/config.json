@@ -20,38 +20,26 @@
     "config:rw"
   ],
   "options": {
-    "rclone": {
-      "enabled": true,
-      "schedule": "0 4 * * *",
-      "command": "sync",
-      "sources": ["/backup"],
-      "destination": "google:/Backup/Home Assistant",
-      "include": [],
-      "exclude": [],
-      "flags": "",
-      "dry_run": false,
-      "config_path": "/config/rclone.conf"
-    },
-    "rename": {
-      "enabled": true
-    }
+    "schedule": "0 4 * * *",
+    "command": "sync",
+    "sources": ["/backup"],
+    "destination": "google:/Backup/Home Assistant",
+    "include": [],
+    "exclude": [],
+    "flags": "",
+    "dry_run": false,
+    "config_path": "/config/rclone.conf"
   },
   "schema": {
-    "rclone": {
-      "enabled": "bool",
-      "schedule": "str",
-      "command": "str",
-      "sources": ["str"],
-      "destination": "str",
-      "include": ["str"],
-      "exclude": ["str"],
-      "flags": "str?",
-      "dry_run": "bool?",
-      "config_path": "str"
-    },
-    "rename": {
-      "enabled": "bool"
-    }
+    "schedule": "str",
+    "command": "str",
+    "sources": ["str"],
+    "destination": "str",
+    "include": ["str"],
+    "exclude": ["str"],
+    "flags": "str?",
+    "dry_run": "bool?",
+    "config_path": "str"
   },
   "image": "jcwillox/hassio-rclone-backup-{arch}"
 }
