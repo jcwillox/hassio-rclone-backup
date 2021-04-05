@@ -57,5 +57,11 @@ if rclone["enabled"]:
     except CalledProcessError as ex:
         print(f"[RCLONE] Rclone Failed!")
 
+try:
+    subprocess.run(
+        [sys.executable, "/run-undo-rename.py"], stdout=True, stderr=True, check=True
+    )
+except CalledProcessError as ex:
+    print(f"[RCLONE] Undo Rename Failed!")
 
 print("[RCLONE] Done!")

@@ -19,7 +19,6 @@ rclone:
   config_path: /share/rclone.conf
 rename:
   enabled: true
-  schedule: 0 * * * *
 ```
 
 ---
@@ -67,9 +66,3 @@ The location of the rclone config file.
 ### `rename`
 
 Renames snapshots in /backup from `slug.tar` e.g. `dc7d0645.tar` to use their name e.g. `DailyBackup_Monday.tar`. This is necessary for the `include`/`exclude` options to work correctly.
-
-**Option:** `schedule`
-
-Specify when the rename action should run using cron syntax.
-
-Note: *this will always be run before the rclone backup when enabled.*

@@ -10,15 +10,15 @@ from slugify import slugify
 CONFIG_PATH = "/data/options.json"
 BACKUP_PATH = "/backup"
 
-os.chdir(BACKUP_PATH)
-
 with open(CONFIG_PATH) as file:
     config = json.loads(file.read())
 
-if not config["rename"]["enabled"]:
+if not config["rename"]["enabled"] or config["rclone"]["source"] != BACKUP_PATH:
     exit(0)
 
 print(f"[RENAME] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+os.chdir(BACKUP_PATH)
 
 for snapshot in listdir():
     with tarfile.open(snapshot, "r:") as file:

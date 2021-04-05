@@ -30,11 +30,10 @@
       "exclude": [],
       "flags": "",
       "dry_run": false,
-      "config_path": "/share/rclone.conf"
+      "config_path": "/config/rclone.conf"
     },
     "rename": {
-      "enabled": false,
-      "schedule": "0 4 * * *"
+      "enabled": true
     }
   },
   "schema": {
@@ -51,8 +50,7 @@
       "config_path": "str"
     },
     "rename": {
-      "enabled": "bool",
-      "schedule": "str"
+      "enabled": "bool"
     }
   },
   "image": "jcwillox/hassio-rclone-backup-{arch}"

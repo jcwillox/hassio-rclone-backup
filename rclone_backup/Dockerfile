@@ -6,10 +6,10 @@ ENV LANG C.UTF-8
 # Copy data for add-on
 COPY ./app /
 COPY ./run.sh /
-COPY ./tostdout.sh /usr/sbin/tostdout
+COPY ./stdout.sh /usr/sbin/stdout
 
 RUN chmod +x /run.sh \
-  && chmod +x /usr/sbin/tostdout
+  && chmod +x /usr/sbin/stdout
 
 # Install requirements for add-on
 RUN apk add rclone --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community \
