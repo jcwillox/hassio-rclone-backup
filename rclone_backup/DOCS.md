@@ -9,7 +9,8 @@ rclone:
   enabled: true
   schedule: 10 4 * * *
   command: sync
-  source: /backup
+  sources:
+    - /backup
   destination: 'google:/Backup/Home Assistant'
   flags: ''
   include:
@@ -33,9 +34,9 @@ Specify when the rclone backup should run using cron syntax.
 
 The rclone command to run e.g. `sync` or `copy`.
 
-**Option:** `source`
+**Option:** `sources`
 
-The directory to read from
+List of directories to read from
 
 **Option:** `destination`
 

@@ -5,6 +5,7 @@ from datetime import datetime
 from subprocess import CalledProcessError
 
 CONFIG_PATH = "/data/options.json"
+BACKUP_PATH = "/backup"
 
 with open(CONFIG_PATH) as file:
     config = json.loads(file.read())
@@ -12,56 +13,56 @@ with open(CONFIG_PATH) as file:
 if not config["rclone"]["enabled"]:
     exit(0)
 
-print(f"[RCLONE] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
-print("[RCLONE] Renaming snapshots...")
-
-try:
-    subprocess.run(
-        [sys.executable, "/run-rename.py"], stdout=True, stderr=True, check=True
-    )
-except CalledProcessError as ex:
-    print(f"[RCLONE] Rename Failed!")
-
-print("[RCLONE] Running rclone...")
-
-with open(CONFIG_PATH) as file:
-    config = json.loads(file.read())
-
 rclone = config["rclone"]
+
+if BACKUP_PATH in rclone["sources"]:    
+    try:
+        subprocess.run(
+            [sys.executable, "/run-rename.py"], stdout=True, stderr=True, check=True
+        )
+    except CalledProcessError as ex:
+        print(f"[RCLONE] Rename failed!")
+
+print(f"[RCLONE] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 if rclone["enabled"]:
     command = rclone["command"]
-    source = rclone["source"]
+    sources = rclone["sources"]
     destination = rclone["destination"]
     config_path = rclone["config_path"]
 
-    cmd = f"rclone {command} '{source}' '{destination}' --config '{config_path}' --verbose"
+    for source in rclone["sources"]:
+        subfolder = ""
+        if len(rclone["sources"]) > 1:
+            subfolder = f"{source}"
 
-    for include in rclone["include"]:
-        cmd += f" --include='{include}'"
+        cmd = f"rclone {command} '{source}' '{destination}{subfolder}' --config '{config_path}' --verbose"
 
-    for exclude in rclone["exclude"]:
-        cmd += f" --exclude='{exclude}'"
+        for include in rclone["include"]:
+            cmd += f" --include='{include}'"
 
-    if rclone.get("dry_run"):
-        cmd += " --dry-run"
+        for exclude in rclone["exclude"]:
+            cmd += f" --exclude='{exclude}'"
 
-    if rclone.get("flags"):
-        cmd += " " + rclone["flags"]
+        if rclone.get("dry_run"):
+            cmd += " --dry-run"
 
-    print(f"[RCLONE] {cmd}")
+        if rclone.get("flags"):
+            cmd += " " + rclone["flags"]
 
-    try:
-        subprocess.run(cmd, stdout=True, stderr=True, check=True, shell=True)
-    except CalledProcessError as ex:
-        print(f"[RCLONE] Rclone Failed!")
+        print(f"[RCLONE] {cmd}")
 
-try:
-    subprocess.run(
-        [sys.executable, "/run-undo-rename.py"], stdout=True, stderr=True, check=True
-    )
-except CalledProcessError as ex:
-    print(f"[RCLONE] Undo Rename Failed!")
+        try:
+            subprocess.run(cmd, stdout=True, stderr=True, check=True, shell=True)
+        except CalledProcessError as ex:
+            print(f"[RCLONE] Rclone failed!")
 
 print("[RCLONE] Done!")
+
+if BACKUP_PATH in rclone["sources"]:
+    try:
+        subprocess.run(
+            [sys.executable, "/run-undo-rename.py"], stdout=True, stderr=True, check=True
+        )
+    except CalledProcessError as ex:
+        print(f"[RCLONE] Undo rename failed!")

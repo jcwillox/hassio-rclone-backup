@@ -11,7 +11,7 @@ BACKUP_PATH = "/backup"
 with open(CONFIG_PATH) as file:
     config = json.loads(file.read())
 
-if not config["rename"]["enabled"] or config["rclone"]["source"] != BACKUP_PATH:
+if not config["rename"]["enabled"]:
     exit(0)
 
 print(f"[UNDO-RENAME] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
