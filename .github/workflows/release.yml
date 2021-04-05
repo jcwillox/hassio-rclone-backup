@@ -1,8 +1,6 @@
 name: 'Publish'
 
-on:
-  release:
-    types: [published]
+on: [workflow_dispatch]
 
 jobs:
   publish:
@@ -21,4 +19,6 @@ jobs:
       with:
         args: |
           --all \
-          --target /data/rclone_backup
+          --target rclone_backup \
+          --no-cache \
+          --docker-hub ssiergl

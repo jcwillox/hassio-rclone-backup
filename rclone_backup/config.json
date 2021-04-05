@@ -10,7 +10,7 @@
     "amd64",
     "i386"
   ],
-  "url": "https://github.com/jcwillox/hassio-rclone-backup",
+  "url": "https://github.com/ssiergl/hassio-rclone-backup",
   "startup": "application",
   "boot": "auto",
   "map": [
@@ -53,5 +53,5 @@
       "enabled": "bool"
     }
   },
-  "image": "jcwillox/hassio-rclone-backup-{arch}"
+  "image": "ssiergl/hassio-rclone-backup-{arch}"
 }
