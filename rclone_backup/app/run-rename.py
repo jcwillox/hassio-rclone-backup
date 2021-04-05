@@ -1,8 +1,9 @@
 import json
-import os
 import tarfile
 from datetime import datetime
+from os import chdir
 from os import listdir
+from os import rename
 from os.path import isfile
 
 from slugify import slugify
@@ -11,7 +12,7 @@ BACKUP_PATH = "/backup"
 
 print(f"[RENAME] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-os.chdir(BACKUP_PATH)
+chdir(BACKUP_PATH)
 
 for snapshot in listdir():
     with tarfile.open(snapshot, "r:") as file:
@@ -19,5 +20,5 @@ for snapshot in listdir():
     name, slug = data["name"], data["slug"]
     filename = slugify(name, lowercase=False, separator="_") + ".tar"
     if snapshot != filename and not isfile(filename):
-        os.rename(snapshot, filename)
+        rename(snapshot, filename)
         print(f"[RENAME] Renamed '{snapshot}' to '{filename}'")

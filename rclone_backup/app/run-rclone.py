@@ -3,6 +3,7 @@ import subprocess
 import sys
 from datetime import datetime
 from os.path import isdir
+from os.path import isfile
 from subprocess import CalledProcessError
 
 CONFIG_PATH = "/data/options.json"
@@ -19,11 +20,20 @@ print("\n")
 command = config["command"]
 sources = config["sources"]
 destination = config["destination"]
-config_path = config["config_path"]
+rclone_config_path = config["config_path"]
 
 if not command in ALLOWED_COMMAND:
     print(f"[RCLONE] Given command is not allowed! Allowed commands: {ALLOWED_COMMAND}")
     exit(1)
+
+if not isfile(rclone_config_path):
+    print(f"[RCLONE] Given rclone config file '{rclone_config_path}' does not exist!")
+    exit(1)
+
+with open(rclone_config_path) as file:
+    if not any(line == ("[" + destination.split(":")[0] + "]\n") for line in file):
+        print(f"[RCLONE] Did not find any rclone configuration matching '{destination}'!")
+        exit(1)
 
 for source in sources:
     print(f"[RCLONE] Start processing source '{source}'")
@@ -48,7 +58,7 @@ for source in sources:
         except CalledProcessError as ex:
             print(f"[RCLONE] Rename failed!")
 
-    cmd = f"rclone {command} '{source}' '{destination}{subfolder}' --config '{config_path}' --verbose"
+    cmd = f"rclone {command} '{source}' '{destination}{subfolder}' --config '{rclone_config_path}' --verbose"
 
     for include in config["include"]:
         cmd += f" --include='{include}'"
