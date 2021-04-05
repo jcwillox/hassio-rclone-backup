@@ -7,14 +7,7 @@ from os.path import isfile
 
 from slugify import slugify
 
-CONFIG_PATH = "/data/options.json"
 BACKUP_PATH = "/backup"
-
-with open(CONFIG_PATH) as file:
-    config = json.loads(file.read())
-
-if not config["rename"]["enabled"]:
-    exit(0)
 
 print(f"[RENAME] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
@@ -27,4 +20,4 @@ for snapshot in listdir():
     filename = slugify(name, lowercase=False, separator="_") + ".tar"
     if snapshot != filename and not isfile(filename):
         os.rename(snapshot, filename)
-        print(f"[RENAME] '{snapshot}' to '{filename}'")
+        print(f"[RENAME] Renamed '{snapshot}' to '{filename}'")

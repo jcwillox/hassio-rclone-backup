@@ -5,21 +5,17 @@ Backup your Home Assistant configuration or snapshots to over 40 cloud providers
 ## Configuration
 
 ```yaml
-rclone:
-  enabled: true
-  schedule: 10 4 * * *
-  command: sync
-  sources:
-    - /backup
-  destination: 'google:/Backup/Home Assistant'
-  flags: ''
-  include:
-    - DailyBackup*
-  exclude: []
-  dry_run: false
-  config_path: /share/rclone.conf
-rename:
-  enabled: true
+schedule: 10 4 * * *
+command: sync
+sources:
+  - /backup
+destination: 'google:/Backup/Home Assistant'
+flags: ''
+include:
+  - DailyBackup*
+exclude: []
+dry_run: false
+config_path: /share/rclone.conf
 ```
 
 ---
@@ -61,9 +57,3 @@ Trial run with no permanent changes, see what rclone would do without actually d
 **Option:** `config_path`
 
 The location of the rclone config file.
-
----
-
-### `rename`
-
-Renames snapshots in /backup from `slug.tar` e.g. `dc7d0645.tar` to use their name e.g. `DailyBackup_Monday.tar`. This is necessary for the `include`/`exclude` options to work correctly.
