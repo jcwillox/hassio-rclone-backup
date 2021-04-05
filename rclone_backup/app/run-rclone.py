@@ -12,14 +12,6 @@ ALLOWED_SOURCE_PATH = ["/backup", "/config", "/share", "/ssl"]
 with open(CONFIG_PATH) as file:
     config = json.loads(file.read())
 
-if BACKUP_PATH in config["sources"]:    
-    try:
-        subprocess.run(
-            [sys.executable, "/run-rename.py"], stdout=True, stderr=True, check=True
-        )
-    except CalledProcessError as ex:
-        print(f"[RCLONE] Rename failed!")
-
 print(f"[RCLONE] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print("\n")
 
@@ -43,6 +35,14 @@ for source in sources:
     if len(sources) > 1:
         subfolder = f"{source}"
 
+    if source.startswith(BACKUP_PATH):
+        try:
+            subprocess.run(
+                [sys.executable, "/run-rename.py"], stdout=True, stderr=True, check=True
+            )
+        except CalledProcessError as ex:
+            print(f"[RCLONE] Rename failed!")
+
     cmd = f"rclone {command} '{source}' '{destination}{subfolder}' --config '{config_path}' --verbose"
 
     for include in config["include"]:
@@ -64,14 +64,15 @@ for source in sources:
     except CalledProcessError as ex:
         print(f"[RCLONE] Rclone failed!")
 
+    if source.startswith(BACKUP_PATH):
+        try:
+            subprocess.run(
+                [sys.executable, "/run-undo-rename.py"], stdout=True, stderr=True, check=True
+            )
+        except CalledProcessError as ex:
+            print(f"[RCLONE] Undo rename failed!")
+
     print("\n")
 
 print("[RCLONE] Done!")
-
-if BACKUP_PATH in config["sources"]:
-    try:
-        subprocess.run(
-            [sys.executable, "/run-undo-rename.py"], stdout=True, stderr=True, check=True
-        )
-    except CalledProcessError as ex:
-        print(f"[RCLONE] Undo rename failed!")
+print("\n" * 3)
