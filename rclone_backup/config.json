@@ -15,9 +15,9 @@
   "boot": "auto",
   "map": [
     "backup:rw",
-    "share:rw",
-    "ssl:rw",
-    "config:rw"
+    "share:ro",
+    "ssl:ro",
+    "config:ro"
   ],
   "options": {
     "schedule": "0 4 * * *",
