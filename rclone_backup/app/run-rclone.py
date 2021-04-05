@@ -7,6 +7,7 @@ from subprocess import CalledProcessError
 
 CONFIG_PATH = "/data/options.json"
 BACKUP_PATH = "/backup"
+ALLOWED_COMMAND = ["sync", "copy"]
 ALLOWED_SOURCE_PATH = ["/backup", "/config", "/share", "/ssl"]
 
 with open(CONFIG_PATH) as file:
@@ -19,6 +20,10 @@ command = config["command"]
 sources = config["sources"]
 destination = config["destination"]
 config_path = config["config_path"]
+
+if not command in ALLOWED_COMMAND:
+    print(f"[RCLONE] Given command is not allowed! Allowed commands: {ALLOWED_COMMAND}")
+    exit(1)
 
 for source in sources:
     print(f"[RCLONE] Start processing source '{source}'")
