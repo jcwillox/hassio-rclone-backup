@@ -1,6 +1,6 @@
 {
   "name": "Rclone Backup",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "slug": "rclone_backup",
   "description": "Automatically sync backup to remote locations using rclone",
   "arch": [
