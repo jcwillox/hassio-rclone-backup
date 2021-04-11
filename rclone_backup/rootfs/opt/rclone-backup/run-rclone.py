@@ -15,7 +15,7 @@ ALLOWED_SOURCE_PATH = ["/backup", "/config", "/share", "/ssl"]
 with open(CONFIG_PATH) as file:
     config = json.loads(file.read())
 
-print(f"[rclone-backup] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 command = config["command"]
 sources = config["sources"]
@@ -36,8 +36,6 @@ with open(rclone_config_path) as file:
         exit(1)
 
 for source in sources:
-    print(f"[rclone-backup] Start processing source '{source}'")
-
     if (not source.startswith(tuple(ALLOWED_SOURCE_PATH)) or (not isdir("/" + source.split("/")[1]))):
         print(f"[rclone-backup] Given source '{source}' is not allowed! Allowed sources: {ALLOWED_SOURCE_PATH}")
         continue
@@ -74,8 +72,6 @@ for source in sources:
     for flag in config["flags"]:
         cmd.append(flag)
 
-    print(f"[rclone-backup] {cmd}")
-
     try:
         subprocess.run(
             cmd, stdout=True, stderr=True, check=True
@@ -91,5 +87,6 @@ for source in sources:
         except CalledProcessError as ex:
             print(f"[rclone-backup] Undo rename failed!")
 
+print(f"[rclone-backup] Started at {start_time}")
+print(f"[rclone-backup] Ended   at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print("[rclone-backup] Done!")
-print("\n" * 2)
