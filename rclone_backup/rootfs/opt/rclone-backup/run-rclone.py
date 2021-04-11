@@ -16,7 +16,6 @@ with open(CONFIG_PATH) as file:
     config = json.loads(file.read())
 
 print(f"[rclone-backup] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-print("\n")
 
 command = config["command"]
 sources = config["sources"]
@@ -58,26 +57,29 @@ for source in sources:
             )
         except CalledProcessError as ex:
             print(f"[rclone-backup] Rename failed!")
-        print("\n")
 
-    cmd = f"rclone {command} '{source}' '{destination}{subfolder}' --config '{rclone_config_path}' --verbose"
+    cmd = ["rclone", command, source, destination + subfolder, "--config", rclone_config_path, "--verbose"]
 
     for include in config["include"]:
-        cmd += f" --include='{include}'"
+        cmd.append("--include")
+        cmd.append(include)
 
     for exclude in config["exclude"]:
-        cmd += f" --exclude='{exclude}'"
+        cmd.append("--exclude")
+        cmd.append(exclude)
 
     if config.get("dry_run"):
-        cmd += " --dry-run"
+        cmd.append("--dry-run")
 
-    if config.get("flags"):
-        cmd += " " + config["flags"]
+    for flag in config["flags"]:
+        cmd.append(flag)
 
     print(f"[rclone-backup] {cmd}")
 
     try:
-        subprocess.run(cmd, stdout=True, stderr=True, check=True, shell=True)
+        subprocess.run(
+            cmd, stdout=True, stderr=True, check=True
+        )
     except CalledProcessError as ex:
         print(f"[rclone-backup] Rclone failed!")
 
@@ -88,7 +90,6 @@ for source in sources:
             )
         except CalledProcessError as ex:
             print(f"[rclone-backup] Undo rename failed!")
-        print("\n")
 
 print("[rclone-backup] Done!")
 print("\n" * 2)

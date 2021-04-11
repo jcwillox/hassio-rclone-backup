@@ -10,10 +10,10 @@ command: sync
 sources:
   - /backup
 destination: 'google:/Backup/Home Assistant'
-flags: ''
 include:
   - DailyBackup*
 exclude: []
+flags: []
 dry_run: false
 config_path: /share/rclone.conf
 ```
@@ -40,7 +40,7 @@ The location to write to in the format `remote:path`, see [rclone docs](https://
 
 **Option:** `flags`
 
-Extra flags to give to the rclone command, see [rclone flags](https://rclone.org/flags).
+List of extra flags to give to the rclone command, see [rclone flags](https://rclone.org/flags).
 
 **Option:** `include`
 
