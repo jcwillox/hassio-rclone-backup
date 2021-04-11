@@ -8,7 +8,7 @@ from os.path import isfile
 
 BACKUP_PATH = "/backup"
 
-print(f"[rclone-backup-undo-rename] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"[rclone-backup-undo-rename] Starting at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 chdir(BACKUP_PATH)
 
@@ -19,3 +19,5 @@ for snapshot in listdir():
     if snapshot != filename and not isfile(filename):
         rename(snapshot, filename)
         print(f"[rclone-backup-undo-rename] Renamed '{snapshot}' to '{filename}'")
+
+print(f"[rclone-backup-undo-rename] Finished at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
