@@ -1,0 +1,10 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Home Assistant third party Add-on: Rclone backup
+# Runnning cron to execute configured rclone job
+# ==============================================================================
+
+bashio::log.info "Starting rclone backup cron..."
+bashio::log.debug "Current config: $(cat /etc/crontabs/root)"
+
+exec /usr/sbin/crond -f
