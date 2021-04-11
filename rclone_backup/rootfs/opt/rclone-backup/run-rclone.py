@@ -87,6 +87,6 @@ for source in sources:
         except CalledProcessError as ex:
             print(f"[rclone-backup] Undo rename failed!")
 
-print(f"[rclone-backup] Started at {start_time}")
-print(f"[rclone-backup] Ended   at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"[rclone-backup] Started  at {start_time}")
+print(f"[rclone-backup] Finished at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print("[rclone-backup] Done!")
