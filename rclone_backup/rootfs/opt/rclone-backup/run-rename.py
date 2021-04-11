@@ -10,7 +10,7 @@ from slugify import slugify
 
 BACKUP_PATH = "/backup"
 
-print(f"[RENAME] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"[rclone-backup-rename] Running {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 chdir(BACKUP_PATH)
 
@@ -21,4 +21,4 @@ for snapshot in listdir():
     filename = slugify(name, lowercase=False, separator="_") + ".tar"
     if snapshot != filename and not isfile(filename):
         rename(snapshot, filename)
-        print(f"[RENAME] Renamed '{snapshot}' to '{filename}'")
+        print(f"[rclone-backup-rename] Renamed '{snapshot}' to '{filename}'")
