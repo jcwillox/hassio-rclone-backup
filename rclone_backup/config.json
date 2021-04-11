@@ -17,7 +17,7 @@
     "backup:rw",
     "share:ro",
     "ssl:ro",
-    "config:ro"
+    "config:rw"
   ],
   "options": {
     "schedule": "0 4 * * *",
@@ -37,7 +37,7 @@
     "destination": "str",
     "include": ["str"],
     "exclude": ["str"],
-    "flags": ["str?"],
+    "flags": ["str"],
     "dry_run": "bool?",
     "config_path": "str"
   },
