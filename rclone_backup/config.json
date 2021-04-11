@@ -26,7 +26,7 @@
     "destination": "google:/Backup/Home Assistant",
     "include": [],
     "exclude": [],
-    "flags": "",
+    "flags": [],
     "dry_run": false,
     "config_path": "/config/rclone.conf"
   },
@@ -37,7 +37,7 @@
     "destination": "str",
     "include": ["str"],
     "exclude": ["str"],
-    "flags": "str?",
+    "flags": ["str?"],
     "dry_run": "bool?",
     "config_path": "str"
   },
