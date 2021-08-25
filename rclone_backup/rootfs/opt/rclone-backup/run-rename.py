@@ -14,13 +14,18 @@ print(f"[rclone-backup-rename] Starting at {datetime.now().strftime('%Y-%m-%d %H
 
 chdir(BACKUP_PATH)
 
-for snapshot in listdir():
-    with tarfile.open(snapshot, "r:") as file:
-        data = json.loads(file.extractfile("./snapshot.json").read())
+for backup in listdir():
+    with tarfile.open(backup, "r:") as file:
+        backup_config = "./backup.json"
+        try:
+            file.getmember(backup_config)
+        except KeyError:
+            backup_config = "./snapshot.json"
+        data = json.loads(file.extractfile(backup_config).read())
     name, slug = data["name"], data["slug"]
     filename = slugify(name, lowercase=False, separator="_") + ".tar"
-    if snapshot != filename and not isfile(filename):
-        rename(snapshot, filename)
-        print(f"[rclone-backup-rename] Renamed '{snapshot}' to '{filename}'")
+    if backup != filename and not isfile(filename):
+        rename(backup, filename)
+        print(f"[rclone-backup-rename] Renamed '{backup}' to '{filename}'")
 
 print(f"[rclone-backup-rename] Finished at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
