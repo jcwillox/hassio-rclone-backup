@@ -1,6 +1,6 @@
 # Rclone Backup
 
-Backup your Home Assistant configuration or snapshots to over 40 cloud providers using [Rclone](https://rclone.org/).
+Backup your Home Assistant configuration or backups to over 40 cloud providers using [Rclone](https://rclone.org/).
 
 ## Configuration
 
