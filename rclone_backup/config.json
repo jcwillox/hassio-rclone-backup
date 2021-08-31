@@ -14,10 +14,11 @@
   "startup": "application",
   "boot": "auto",
   "map": [
+    "config:rw",
     "backup:rw",
     "share:ro",
     "ssl:ro",
-    "config:rw"
+    "media:ro"
   ],
   "options": {
     "schedule": "0 4 * * *",

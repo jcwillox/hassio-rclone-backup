@@ -17,7 +17,7 @@ INSTALL_PATH = "/opt/rclone-backup"
 CONFIG_PATH = "/data/options.json"
 BACKUP_PATH = "/backup"
 ALLOWED_COMMAND = ["sync", "copy"]
-ALLOWED_SOURCE_PATHS = ("/backup", "/config", "/share", "/ssl")
+ALLOWED_SOURCE_PATHS = ("/backup", "/config", "/share", "/ssl", "/media")
 
 
 def now():
