@@ -3,7 +3,9 @@ import os
 import subprocess
 import tarfile
 from datetime import datetime
-from os import listdir, path, chdir
+from glob import glob
+from json import JSONDecodeError
+from os import path, chdir
 from os.path import isdir, splitext
 from os.path import isfile
 from subprocess import CalledProcessError
@@ -124,8 +126,11 @@ def rename_backups() -> Dict[str, str]:
     renamed_backups: Dict[str, str] = {}
     chdir(BACKUP_PATH)
 
-    for filename in listdir():
-        name, slug = get_backup_info(filename)
+    for filename in glob("*.tar"):
+        try:
+            name, slug = get_backup_info(filename)
+        except (tarfile.TarError, JSONDecodeError):
+            continue
         friendly_filename = slugify(name, lowercase=False, separator="_") + ".tar"
         # we only want to rename backups that are named with their slug
         if splitext(filename)[0] == slug and not isfile(friendly_filename):
