@@ -15,12 +15,10 @@ include:
 exclude: []
 flags: []
 dry_run: false
-config_path: /share/rclone.conf
+config_path: /config/rclone.conf
 ```
 
 ---
-
-### `rclone`
 
 **Option:** `schedule`
 
@@ -32,15 +30,13 @@ The rclone command to run e.g. `sync` or `copy`.
 
 **Option:** `sources`
 
-List of directories to read from
+List of directories to read from must one of or a subdirectory of `/backup`, `/config`, `/share`, `/ssl`, `/media`.
+
+*When specifying multiple sources the files will be stored under `destination/source` otherwise they will be directly under `destination`.*
 
 **Option:** `destination`
 
 The location to write to in the format `remote:path`, see [rclone docs](https://rclone.org/docs).
-
-**Option:** `flags`
-
-List of extra flags to give to the rclone command, see [rclone flags](https://rclone.org/flags).
 
 **Option:** `include`
 
@@ -50,10 +46,16 @@ List of files or folders to include, see [rclone filtering](https://rclone.org/f
 
 List of files or folders to exclude, see [rclone filtering](https://rclone.org/filtering).
 
+**Option:** `flags`
+
+List of extra flags to give to the rclone command, see [rclone flags](https://rclone.org/flags).
+
+*For example, you may want to add `--drive-use-trash=false` when using google drive so rclone immediately deletes files instead of sending them to the trash.*
+
 **Option:** `dry_run`
 
 Trial run with no permanent changes, see what rclone would do without actually doing it.
 
 **Option:** `config_path`
 
-The location of the rclone config file.
+The location of the rclone config file, must be stored under `/config`.
