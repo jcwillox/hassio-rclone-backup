@@ -138,14 +138,12 @@ def rename_backups() -> Dict[str, str]:
             renamed_backups[filename] = friendly_filename
             try:
                 os.rename(filename, friendly_filename)
-                print(
-                    f"[rclone-backup-rename] Renamed '{filename}' to '{friendly_filename}'"
-                )
             except OSError:
                 print(
                     f"[rclone-backup-rename] Failed to rename '{filename}' to '{friendly_filename}'"
                 )
 
+    print(f"[rclone-backup-rename] Renamed {len(renamed_backups)} backups")
     print(f"[rclone-backup-rename] Finished at {now()}")
     return renamed_backups
 
