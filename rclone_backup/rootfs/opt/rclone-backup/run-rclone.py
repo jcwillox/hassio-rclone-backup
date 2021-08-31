@@ -15,29 +15,39 @@ ALLOWED_SOURCE_PATH = ["/backup", "/config", "/share", "/ssl"]
 with open(CONFIG_PATH) as file:
     config = json.loads(file.read())
 
-start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 command = config["command"]
 sources = config["sources"]
 destination = config["destination"]
 rclone_config_path = config["config_path"]
 
-if not command in ALLOWED_COMMAND:
-    print(f"[rclone-backup] Given command is not allowed! Allowed commands: {ALLOWED_COMMAND}")
+if command not in ALLOWED_COMMAND:
+    print(
+        f"[rclone-backup] Given command is not allowed! Allowed commands: {ALLOWED_COMMAND}"
+    )
     exit(1)
 
 if not isfile(rclone_config_path):
-    print(f"[rclone-backup] Given rclone config file '{rclone_config_path}' does not exist!")
+    print(
+        f"[rclone-backup] Given rclone config file '{rclone_config_path}' does not exist!"
+    )
     exit(1)
 
 with open(rclone_config_path) as file:
     if not any(line == ("[" + destination.split(":")[0] + "]\n") for line in file):
-        print(f"[rclone-backup] Did not find any rclone configuration matching '{destination}'!")
+        print(
+            f"[rclone-backup] Did not find any rclone configuration matching '{destination}'!"
+        )
         exit(1)
 
 for source in sources:
-    if (not source.startswith(tuple(ALLOWED_SOURCE_PATH)) or (not isdir("/" + source.split("/")[1]))):
-        print(f"[rclone-backup] Given source '{source}' is not allowed! Allowed sources: {ALLOWED_SOURCE_PATH}")
+    if not source.startswith(tuple(ALLOWED_SOURCE_PATH)) or (
+        not isdir("/" + source.split("/")[1])
+    ):
+        print(
+            f"[rclone-backup] Given source '{source}' is not allowed! Allowed sources: {ALLOWED_SOURCE_PATH}"
+        )
         continue
 
     if not isdir(source):
@@ -51,12 +61,23 @@ for source in sources:
     if source.startswith(BACKUP_PATH):
         try:
             subprocess.run(
-                [sys.executable, INSTALL_PATH + "/run-rename.py"], stdout=True, stderr=True, check=True
+                [sys.executable, INSTALL_PATH + "/run-rename.py"],
+                stdout=True,
+                stderr=True,
+                check=True,
             )
         except CalledProcessError as ex:
             print(f"[rclone-backup] Rename failed!")
 
-    cmd = ["rclone", command, source, destination + subfolder, "--config", rclone_config_path, "--verbose"]
+    cmd = [
+        "rclone",
+        command,
+        source,
+        destination + subfolder,
+        "--config",
+        rclone_config_path,
+        "--verbose",
+    ]
 
     for include in config["include"]:
         cmd.append("--include")
@@ -73,16 +94,17 @@ for source in sources:
         cmd.append(flag)
 
     try:
-        subprocess.run(
-            cmd, stdout=True, stderr=True, check=True
-        )
+        subprocess.run(cmd, stdout=True, stderr=True, check=True)
     except CalledProcessError as ex:
         print(f"[rclone-backup] Rclone failed!")
 
     if source.startswith(BACKUP_PATH):
         try:
             subprocess.run(
-                [sys.executable, INSTALL_PATH + "/run-undo-rename.py"], stdout=True, stderr=True, check=True
+                [sys.executable, INSTALL_PATH + "/run-undo-rename.py"],
+                stdout=True,
+                stderr=True,
+                check=True,
             )
         except CalledProcessError as ex:
             print(f"[rclone-backup] Undo rename failed!")

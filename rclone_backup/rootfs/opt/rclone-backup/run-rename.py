@@ -10,7 +10,9 @@ from slugify import slugify
 
 BACKUP_PATH = "/backup"
 
-print(f"[rclone-backup-rename] Starting at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print(
+    f"[rclone-backup-rename] Starting at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+)
 
 chdir(BACKUP_PATH)
 
@@ -28,4 +30,6 @@ for backup in listdir():
         rename(backup, filename)
         print(f"[rclone-backup-rename] Renamed '{backup}' to '{filename}'")
 
-print(f"[rclone-backup-rename] Finished at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print(
+    f"[rclone-backup-rename] Finished at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+)
