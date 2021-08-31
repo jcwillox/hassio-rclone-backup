@@ -14,11 +14,15 @@ ALLOWED_COMMAND = ["sync", "copy"]
 ALLOWED_SOURCE_PATHS = ("/backup", "/config", "/share", "/ssl")
 
 
+def now():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
 def main():
     with open(CONFIG_PATH) as file:
         config = json.loads(file.read())
 
-    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    start_time = now()
 
     command = config["command"]
     sources = config["sources"]
@@ -110,8 +114,8 @@ def main():
             except CalledProcessError:
                 print(f"[rclone-backup] Undo rename failed!")
 
-    print(f"[rclone-backup] Started  at {start_time}")
-    print(f"[rclone-backup] Finished at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"[rclone-backup] Started at {start_time}")
+    print(f"[rclone-backup] Finished at {now()}")
     print("[rclone-backup] Done!")
 
 
