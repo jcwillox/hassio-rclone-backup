@@ -2,6 +2,7 @@ import json
 import subprocess
 import sys
 from datetime import datetime
+from os import path
 from os.path import isdir
 from os.path import isfile
 from subprocess import CalledProcessError
@@ -10,7 +11,7 @@ INSTALL_PATH = "/opt/rclone-backup"
 CONFIG_PATH = "/data/options.json"
 BACKUP_PATH = "/backup"
 ALLOWED_COMMAND = ["sync", "copy"]
-ALLOWED_SOURCE_PATH = ["/backup", "/config", "/share", "/ssl"]
+ALLOWED_SOURCE_PATHS = ("/backup", "/config", "/share", "/ssl")
 
 
 def main():
@@ -37,22 +38,20 @@ def main():
         exit(1)
 
     with open(rclone_config_path) as file:
-        if not any(line == ("[" + destination.split(":")[0] + "]\n") for line in file):
+        if not any(line.startswith(f"[{destination.split(':')[0]}]") for line in file):
             print(
                 f"[rclone-backup] Did not find any rclone configuration matching '{destination}'!"
             )
             exit(1)
 
     for source in sources:
-        if not source.startswith(tuple(ALLOWED_SOURCE_PATH)) or (
-            not isdir("/" + source.split("/")[1])
-        ):
+        source = path.join("/", source)
+        if not source.startswith(ALLOWED_SOURCE_PATHS):
             print(
-                f"[rclone-backup] Given source '{source}' is not allowed! Allowed sources: {ALLOWED_SOURCE_PATH}"
+                f"[rclone-backup] Given source '{source}' is not allowed! Allowed sources: {ALLOWED_SOURCE_PATHS}"
             )
             continue
-
-        if not isdir(source):
+        elif not isdir(source):
             print(f"[rclone-backup] Given source '{source}' directory does not exist!")
             continue
 
