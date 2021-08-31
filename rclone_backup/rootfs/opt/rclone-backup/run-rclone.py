@@ -1,11 +1,15 @@
 import json
+import os
 import subprocess
-import sys
+import tarfile
 from datetime import datetime
-from os import path
-from os.path import isdir
+from os import listdir, path, chdir
+from os.path import isdir, splitext
 from os.path import isfile
 from subprocess import CalledProcessError
+from typing import Dict
+
+from slugify import slugify
 
 INSTALL_PATH = "/opt/rclone-backup"
 CONFIG_PATH = "/data/options.json"
@@ -63,16 +67,9 @@ def main():
         if len(sources) > 1:
             subfolder = f"{source}"
 
+        renamed_backups = {}
         if source.startswith(BACKUP_PATH):
-            try:
-                subprocess.run(
-                    [sys.executable, INSTALL_PATH + "/run-rename.py"],
-                    stdout=True,
-                    stderr=True,
-                    check=True,
-                )
-            except CalledProcessError:
-                print(f"[rclone-backup] Rename failed!")
+            renamed_backups = rename_backups()
 
         cmd = [
             "rclone",
@@ -103,20 +100,62 @@ def main():
         except CalledProcessError:
             print(f"[rclone-backup] Rclone failed!")
 
-        if source.startswith(BACKUP_PATH):
-            try:
-                subprocess.run(
-                    [sys.executable, INSTALL_PATH + "/run-undo-rename.py"],
-                    stdout=True,
-                    stderr=True,
-                    check=True,
-                )
-            except CalledProcessError:
-                print(f"[rclone-backup] Undo rename failed!")
+        if renamed_backups:
+            undo_rename_backups(renamed_backups)
 
     print(f"[rclone-backup] Started at {start_time}")
     print(f"[rclone-backup] Finished at {now()}")
     print("[rclone-backup] Done!")
+
+
+def get_backup_info(filename) -> (str, str):
+    with tarfile.open(filename, "r:") as file:
+        backup_config = "./backup.json"
+        try:
+            file.getmember(backup_config)
+        except KeyError:
+            backup_config = "./snapshot.json"
+        data = json.loads(file.extractfile(backup_config).read())
+    return data["name"], data["slug"]
+
+
+def rename_backups() -> Dict[str, str]:
+    print(f"[rclone-backup-rename] Starting at {now()}")
+    renamed_backups: Dict[str, str] = {}
+    chdir(BACKUP_PATH)
+
+    for filename in listdir():
+        name, slug = get_backup_info(filename)
+        friendly_filename = slugify(name, lowercase=False, separator="_") + ".tar"
+        # we only want to rename backups that are named with their slug
+        if splitext(filename)[0] == slug and not isfile(friendly_filename):
+            # track renamed backups to restore their names later
+            renamed_backups[filename] = friendly_filename
+            try:
+                os.rename(filename, friendly_filename)
+                print(
+                    f"[rclone-backup-rename] Renamed '{filename}' to '{friendly_filename}'"
+                )
+            except OSError:
+                print(
+                    f"[rclone-backup-rename] Failed to rename '{filename}' to '{friendly_filename}'"
+                )
+
+    print(f"[rclone-backup-rename] Finished at {now()}")
+    return renamed_backups
+
+
+def undo_rename_backups(renamed_backups: Dict[str, str]):
+    print(f"[rclone-backup-undo-rename] Starting at {now()}")
+    chdir(BACKUP_PATH)
+    for name_slug, name_friendly in renamed_backups.items():
+        try:
+            os.rename(name_friendly, name_slug)
+        except OSError:
+            print(
+                f"[rclone-backup-undo-rename] Failed to rename '{name_friendly}' to '{name_slug}'"
+            )
+    print(f"[rclone-backup-undo-rename] Finished at {now()}")
 
 
 if __name__ == "__main__":
