@@ -42,5 +42,5 @@
     "dry_run": "bool?",
     "config_path": "str"
   },
-  "image": "jcwillox/hassio-rclone-backup-{arch}"
+  "image": "ghcr.io/jcwillox/hassio-rclone-backup/{arch}"
 }

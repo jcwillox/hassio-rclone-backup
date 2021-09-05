@@ -15,4 +15,4 @@ jobs:
         args: |
           --test \
           --all \
-          --target /data/rclone_backup
+          --target rclone_backup
