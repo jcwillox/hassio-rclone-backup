@@ -14,6 +14,21 @@ jobs:
     steps:
     - name: Checkout the repository
       uses: actions/checkout@v2
+      with:
+        ref: main
+    - name: Update version and changelog
+      run: |
+        current="$(jq --raw-output .version $TARGET/config.json | sed 's/\./\\./g')"
+        sed -i s/$current/${{ github.event.release.tag_name }}/ $TARGET/config.json
+
+        echo -e "## What’s changed\n" > $TARGET/CHANGELOG.md
+        jq --raw-output '.release.body // empty' "${{ github.event_path }}" >> $TARGET/CHANGELOG.md
+    - name: Commit & push changes
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git commit -am "🎉 Release ${{ github.event.release.tag_name }}"
+        git push
     - name: Get addon information and update build args
       id: information
       uses: ./.github/actions/addon-info
