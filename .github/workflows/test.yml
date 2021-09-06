@@ -2,6 +2,9 @@ name: 'Test'
 
 on: [push, pull_request]
 
+env:
+  TARGET: rclone_backup
+
 jobs:
   build:
     name: Test Build
@@ -9,10 +12,15 @@ jobs:
     steps:
     - name: Checkout the repository
       uses: actions/checkout@v2
+    - name: Get addon information and update build args
+      id: information
+      uses: ./.github/actions/addon-info
     - name: Test build
       uses: home-assistant/builder@master
       with:
         args: |
           --test \
           --all \
-          --target rclone_backup
+          --target ${{ env.TARGET }} \
+          --image ${{ steps.information.outputs.image }} \
+          --docker-hub ${{ steps.information.outputs.repository }}

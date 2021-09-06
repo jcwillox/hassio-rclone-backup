@@ -4,6 +4,9 @@ on:
   release:
     types: [published]
 
+env:
+  TARGET: rclone_backup
+
 jobs:
   publish:
     name: Publish
@@ -11,6 +14,9 @@ jobs:
     steps:
     - name: Checkout the repository
       uses: actions/checkout@v2
+    - name: Get addon information and update build args
+      id: information
+      uses: ./.github/actions/addon-info
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v1
       with:
@@ -22,4 +28,6 @@ jobs:
       with:
         args: |
           --all \
-          --target rclone_backup
+          --target ${{ env.TARGET }} \
+          --image ${{ steps.information.outputs.image }} \
+          --docker-hub ${{ steps.information.outputs.repository }}

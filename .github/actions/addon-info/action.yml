@@ -1,0 +1,41 @@
+name: "Get addon information and update build args"
+description: ""
+inputs:
+  target:
+    description: "Target"
+    required: true
+outputs:
+  name:
+    description: "Name"
+    value: ${{ steps.information.outputs.name }}
+  description:
+    description: "Description"
+    value: ${{ steps.information.outputs.description }}
+  repository:
+    description: "Repository"
+    value: ${{ steps.information.outputs.repository }}
+  image:
+    description: "Image"
+    value: ${{ steps.information.outputs.image }}
+runs:
+  using: "composite"
+  steps:
+    - id: information
+      shell: bash
+      run: |
+        name="$(jq --raw-output '.name // empty' "$TARGET/config.json" | sed "s/'//g")"
+        description="$(jq --raw-output '.description // empty' "$TARGET/config.json" | sed "s/'//g")"
+
+        raw_image=$(jq --raw-output '.image // empty' "$TARGET/config.json")
+        repository="$(echo "$raw_image" | cut -f 1 -d '/')"
+        image="$(echo "$raw_image" | cut -f 2- -d '/')"
+
+        echo "::set-output name=name::${name}"
+        echo "::set-output name=description::${description}"
+        echo "::set-output name=repository::${repository}"
+        echo "::set-output name=image::${image}"
+
+        echo $(jq ".args.BUILD_NAME=\"${name}\"" $TARGET/build.json) > $TARGET/build.json
+        echo $(jq ".args.BUILD_DESCRIPTION=\"${description}\"" $TARGET/build.json) > $TARGET/build.json
+        echo $(jq '.args.BUILD_REPOSITORY="${{ github.repository }}"' $TARGET/build.json) > $TARGET/build.json
+        echo $(jq '.args.BUILD_SHA="${{ github.sha }}"' $TARGET/build.json) > $TARGET/build.json

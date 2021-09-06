@@ -6,9 +6,5 @@
     "armv7": "ghcr.io/hassio-addons/base-python/armv7:7.1.1",
     "i386": "ghcr.io/hassio-addons/base-python/i386:7.1.1"
   },
-  "args": {
-    "BUILD_NAME": "Rclone Backup",
-    "BUILD_DESCRIPTION": "Automatically sync backup to remote locations using rclone",
-    "BUILD_REPOSITORY": "jcwillox/hassio-rclone-backup"
-  }
+  "args": {}
 }
