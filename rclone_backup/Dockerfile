@@ -6,6 +6,7 @@ ARG BUILD_ARCH
 ARG BUILD_NAME
 ARG BUILD_DESCRIPTION
 ARG BUILD_REPOSITORY
+ARG BUILD_SHA
 
 ENV LANG C.UTF-8
 ENV RCLONE_INSTALLED_VERSION 1.56.0
@@ -41,4 +42,8 @@ LABEL \
     org.opencontainers.image.licenses="MIT" \
     org.opencontainers.image.url="https://github.com/${BUILD_REPOSITORY}" \
     org.opencontainers.image.source="https://github.com/${BUILD_REPOSITORY}" \
-    org.opencontainers.image.documentation="https://github.com/${BUILD_REPOSITORY}/blob/main/README.md"
+    org.opencontainers.image.documentation="https://github.com/${BUILD_REPOSITORY}/blob/main/README.md" \
+    org.opencontainers.image.revision=${BUILD_SHA} \
+    org.opencontainers.image.authors="" \
+    org.opencontainers.image.vendor="" \
+    maintainer=""
