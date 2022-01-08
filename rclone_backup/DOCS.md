@@ -16,6 +16,8 @@ exclude: []
 flags: []
 dry_run: false
 config_path: /config/rclone.conf
+disable_rename: false
+disable_undo_rename: false
 ```
 
 ---
@@ -59,3 +61,13 @@ Trial run with no permanent changes, see what rclone would do without actually d
 **Option:** `config_path`
 
 The location of the rclone config file, must be stored under `/config`.
+
+**Option:** `disable_rename`
+
+Disable the renaming of snapshots before uploading them, with this enabled snapshots will use their slug id (their name on disk) instead of their friendly name.
+
+**Option:** `disable_undo_rename`
+
+Prevents renaming snapshots back to their original name, with this enabled the snapshot files will be renamed to use their friendly name and this will persist on disk.
+
+*Note: this option can apparently cause issues with restoring snapshots but won't affect the actual integrity of the snapshots, exercise caution when using it.*

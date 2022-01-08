@@ -40,7 +40,9 @@
     "exclude": ["str"],
     "flags": ["str"],
     "dry_run": "bool?",
-    "config_path": "str"
+    "config_path": "str",
+    "disable_rename": "bool?",
+    "disable_undo_rename": "bool?"
   },
   "image": "ghcr.io/jcwillox/hassio-rclone-backup/{arch}"
 }

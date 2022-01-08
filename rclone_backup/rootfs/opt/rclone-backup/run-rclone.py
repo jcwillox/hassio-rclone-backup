@@ -70,7 +70,7 @@ def main():
             subfolder = f"{source}"
 
         renamed_backups = {}
-        if source.startswith(BACKUP_PATH):
+        if source.startswith(BACKUP_PATH) and not config.get("disable_rename"):
             renamed_backups = rename_backups()
 
         cmd = [
@@ -102,7 +102,7 @@ def main():
         except CalledProcessError:
             print(f"[rclone-backup] Rclone failed!")
 
-        if renamed_backups:
+        if renamed_backups and not config.get("disable_undo_rename"):
             undo_rename_backups(renamed_backups)
 
     print(f"[rclone-backup] Started at {start_time}")
