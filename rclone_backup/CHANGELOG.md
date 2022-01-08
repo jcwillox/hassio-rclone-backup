@@ -1,8 +1,11 @@
 ## What’s changed
 
 ## ⚡ Changes
-* Docker images are now published to the Github Container Registry
-* Setup GitHub actions to assist in publishing new releases, i.e. bumping version and generating the `CHANGELOG.md`
-* _Rerelease of `1.1.0` to fix changelog not being committed_
+* Allow `move` command (fixes #7) (f3f81f7)
+* Add `disable_rename` and `disable_undo_rename` options (9dfb4a5)
+* Bump rclone to v1.57.0 (9b18b0b)
+* Bump hassio-addons/base-python to 8.0.1 (ad01900)
+* Change logo (83fa4fb)
 
-If you're coming from `0.1.3` don't forget to check out the breaking changes in release [`1.0.0`](https://github.com/jcwillox/hassio-rclone-backup/releases/tag/1.0.1)
+
+**Full Changelog**: https://github.com/jcwillox/hassio-rclone-backup/compare/1.1.1...1.2.0
