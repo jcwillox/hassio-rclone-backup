@@ -1,4 +1,30 @@
 ARG BUILD_FROM
+FROM golang:1.17-alpine as build
+
+ARG BUILD_ARCH
+ARG BUILD_FROM
+
+ENV CGO_ENABLED=0
+WORKDIR /app
+
+COPY scheduler .
+
+RUN if [ "${BUILD_ARCH}" = "armhf" ]; then \
+        export GOARCH=arm GOARM=6; \
+    elif [ "${BUILD_ARCH}" = "armv7" ]; then \
+        export GOARCH=arm GOARM=7; \
+    elif [ "${BUILD_ARCH}" = "aarch64" ]; then \
+        export GOARCH=arm64; \
+    elif [ "${BUILD_ARCH}" = "i386" ]; then \
+        export GOARCH=386; \
+    elif [ "${BUILD_ARCH}" = "amd64" ]; then \
+        export GOARCH=amd64; \
+    else \
+        exit 1; \
+    fi \
+    && go build -o scheduler.bin
+
+
 FROM $BUILD_FROM
 
 # Build arguments
@@ -13,6 +39,7 @@ ENV RCLONE_INSTALLED_VERSION 1.57.0
 
 # Copy root filesystem
 COPY rootfs /
+COPY --from=build /app/scheduler.bin /usr/bin/scheduler
 
 # Install requirements for add-on
 RUN if [ "${BUILD_ARCH}" = "armhf" ]; then \
@@ -32,8 +59,7 @@ RUN if [ "${BUILD_ARCH}" = "armhf" ]; then \
     && cp /tmp/rclone-*/rclone /usr/bin/rclone  \
     && chmod 755 /usr/bin/rclone \
     && rm -fr /tmp/rclone* \
-    && mkdir -p /root/.config/rclone \
-    && pip install --no-cache-dir python-slugify
+    && mkdir -p /root/.config/rclone
 
 # Labels
 LABEL \

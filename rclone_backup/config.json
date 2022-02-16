@@ -21,28 +21,40 @@
     "media:ro"
   ],
   "options": {
-    "schedule": "0 4 * * *",
-    "command": "sync",
-    "sources": ["/backup"],
-    "destination": "google:/Backup/Home Assistant",
-    "include": [],
-    "exclude": [],
-    "flags": [],
+    "jobs": [
+      {
+        "name": "Sync Daily Backups",
+        "schedule": "0 4 * * *",
+        "command": "sync",
+        "sources": ["/backup"],
+        "destination": "google:/Backup/Home Assistant",
+        "include": [],
+        "exclude": [],
+        "flags": []
+      }
+    ],
     "dry_run": false,
     "config_path": "/config/rclone.conf"
   },
   "schema": {
-    "schedule": "str",
-    "command": "str",
-    "sources": ["str"],
-    "destination": "str",
-    "include": ["str"],
-    "exclude": ["str"],
-    "flags": ["str"],
-    "dry_run": "bool?",
+    "jobs": [
+      {
+        "name": "str?",
+        "schedule": "str?",
+        "command": "str",
+        "sources": ["str"],
+        "destination": "str",
+        "include": ["str"],
+        "exclude": ["str"],
+        "flags": ["str"]
+      }
+    ],
     "config_path": "str",
-    "disable_rename": "bool?",
-    "disable_undo_rename": "bool?"
+    "run_once": "bool?",
+    "dry_run": "bool?",
+    "no_rename": "bool?",
+    "no_unrename": "bool?",
+    "log_level": "list(debug|info|warning|error|fatal)?"
   },
   "image": "ghcr.io/jcwillox/hassio-rclone-backup/{arch}"
 }
