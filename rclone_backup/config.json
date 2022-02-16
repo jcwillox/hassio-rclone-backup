@@ -50,6 +50,7 @@
       }
     ],
     "config_path": "str",
+    "rclone_config": "str?",
     "run_once": "bool?",
     "dry_run": "bool?",
     "no_rename": "bool?",

@@ -76,6 +76,15 @@ func main() {
 		Fatalln("failed to read or parse config", err)
 	}
 
+	// write rclone config from addon config
+	if config.RcloneConfig != "" {
+		err := os.WriteFile(DefaultConfigPath, []byte(config.RcloneConfig), 0666)
+		if err != nil {
+			Fatalln("failed to write config")
+		}
+		config.ConfigPath = DefaultConfigPath
+	}
+
 	// check rclone config exists
 	if stat, _ := os.Stat(config.ConfigPath); stat == nil {
 		Fatalln(
