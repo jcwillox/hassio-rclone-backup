@@ -16,10 +16,11 @@ jobs:
       uses: actions/checkout@v2
       with:
         ref: main
+    - name: Setup yq
+      uses: frenck/action-setup-yq@v1
     - name: Update version and changelog
       run: |
-        current="$(jq --raw-output .version $TARGET/config.json | sed 's/\./\\./g')"
-        sed -i s/$current/${{ github.event.release.tag_name }}/ $TARGET/config.json
+        yq -i '.version = "${{ github.event.release.tag_name }}"' $TARGET/config.yaml
 
         echo -e "## What’s changed\n" > $TARGET/CHANGELOG.md
         jq --raw-output '.release.body // empty' "${{ github.event_path }}" >> $TARGET/CHANGELOG.md
