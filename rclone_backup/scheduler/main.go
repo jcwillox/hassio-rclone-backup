@@ -222,7 +222,7 @@ func CreateJob(job JobConfig) func() {
 			cmd.Stdin = os.Stdin
 
 			if job.Name != "" {
-				Infoln("running", "\""+emerald.Cyan+job.Name+emerald.Green+"\";", emerald.HighlightPathStat(source), Arrow, job.Destination)
+				Infoln("running", emerald.Cyan+"\""+job.Name+"\""+emerald.Green+";", emerald.HighlightPathStat(source), Arrow, job.Destination)
 			} else {
 				Infoln("running job", emerald.HighlightPathStat(source), Arrow, job.Destination)
 			}
