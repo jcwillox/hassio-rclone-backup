@@ -21,7 +21,7 @@ map:
 options:
   jobs:
     - name: Sync Daily Backups
-      schedule: 0 4 * * *
+      schedule: 10 4 * * *
       command: sync
       sources:
         - "/backup"
@@ -45,10 +45,10 @@ schema:
         - str
       flags:
         - str
+  dry_run: bool?
+  run_once: bool?
   config_path: str
   rclone_config: str?
-  run_once: bool?
-  dry_run: bool?
   no_rename: bool?
   no_unrename: bool?
   log_level: list(debug|info|warning|error|fatal)?

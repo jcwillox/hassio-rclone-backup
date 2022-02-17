@@ -31,13 +31,13 @@ var (
 
 type Config struct {
 	Jobs         []JobConfig
-	ConfigPath   string `yaml:"config_path"`
-	RunOnce      bool   `yaml:"run_once"`
 	DryRun       bool   `yaml:"dry_run"`
+	RunOnce      bool   `yaml:"run_once"`
+	ConfigPath   string `yaml:"config_path"`
+	RcloneConfig string `yaml:"rclone_config"`
 	NoRename     bool   `yaml:"no_rename"`
 	NoUnrename   bool   `yaml:"no_unrename"`
 	LogLevel     string `yaml:"log_level"`
-	RcloneConfig string `yaml:"rclone_config"`
 }
 
 type JobConfig struct {
