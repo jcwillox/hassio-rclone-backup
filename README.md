@@ -56,7 +56,7 @@ jobs:
     exclude: []
     # we can also disable google drive trash using flags
     flags:
-      - --drive-use-trash=false
+      drive-use-trash: false
 dry_run: false
 config_path: /config/rclone.conf
 ```

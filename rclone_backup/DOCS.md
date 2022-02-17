@@ -13,7 +13,7 @@ jobs:
     include:
       - DailyBackup*
     exclude: []
-    flags: []
+    flags: {}
 dry_run: false
 config_path: /config/rclone.conf
 ```
@@ -23,6 +23,32 @@ config_path: /config/rclone.conf
 **Option:** `jobs`
 
 A list of jobs to schedule, see the [job config](#job-config) section for a list of available options.
+
+**Option:** `flags`
+
+Global map of flags to give the rclone command for every job, see [rclone flags](https://rclone.org/flags). Underscores are allowed for the flags and they will be replaced with dashes.
+
+```yaml
+jobs:
+  - ...
+flags:
+  drive-use-trash: false
+  min-age: 30d
+```
+
+*For example, you may want to add `drive-use-trash: false` when using google drive so rclone immediately deletes files instead of sending them to the trash.*
+
+**Option:** `extra_flags`
+
+List of flags to give the rclone command, applied globally to all jobs. For use when `flags` option isn't working, the list of flags are appended directly to the rclone command.
+
+```yaml
+jobs:
+  - ...
+extra_flags:
+  - --drive-use-trash=false
+  - --min-age=30d
+```
 
 **Option:** `dry_run`
 
@@ -95,9 +121,11 @@ List of files or folders to exclude, see [rclone filtering](https://rclone.org/f
 
 **Option:** `flags`
 
-List of extra flags to give to the rclone command, see [rclone flags](https://rclone.org/flags).
+Map of flags to give to the rclone command, see [rclone flags](https://rclone.org/flags).
 
-*For example, you may want to add `--drive-use-trash=false` when using google drive so rclone immediately deletes files instead of sending them to the trash.*
+**Option:** `extra_flags`
+
+List of flags to give the rclone command, applied globally to all jobs. For use when `flags` option isn't working, the list of flags are appended directly to the rclone command.
 
 ---
 

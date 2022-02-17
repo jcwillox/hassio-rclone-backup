@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/jcwillox/emerald"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -47,4 +48,25 @@ func PrintJob(job JobConfig) {
 		}
 	}
 	emerald.Print("] ", job.Destination, "\n")
+}
+
+func FlagMapToList(flags map[string]string) []string {
+	flagList := make([]string, 0, len(flags)*2)
+	for key, value := range flags {
+		key = strings.ReplaceAll(key, "_", "-")
+		if !strings.HasPrefix(key, "--") {
+			key = "--" + key
+		}
+		if value == "False" || value == "True" {
+			value = strings.ToLower(value)
+		} else if value != "" && value != "None" && strings.Contains(value, " ") {
+			value = strconv.Quote(value)
+		}
+		if value != "" && value != "None" {
+			flagList = append(flagList, key+"="+value)
+		} else {
+			flagList = append(flagList, key)
+		}
+	}
+	return flagList
 }

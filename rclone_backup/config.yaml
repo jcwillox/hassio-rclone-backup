@@ -28,7 +28,7 @@ options:
       destination: google:/Backup/Home Assistant
       include: []
       exclude: []
-      flags: []
+      flags: {}
   dry_run: false
   config_path: "/config/rclone.conf"
 schema:
@@ -43,9 +43,13 @@ schema:
         - str
       exclude:
         - str
-      flags:
-        - str
+      flags: "match({(('[^ ]+': *?('([^']|(?<=\\\\)')*'|None|False|True))(, *?'[^ ]+': *?('([^']|(?<=\\\\)')*'|None|False|True))*)?})?"
+      extra_flags:
+        - str?
   dry_run: bool?
+  flags: "match({(('[^ ]+': *?('([^']|(?<=\\\\)')*'|None|False|True))(, *?'[^ ]+': *?('([^']|(?<=\\\\)')*'|None|False|True))*)?})?"
+  extra_flags:
+    - str?
   run_once: bool?
   config_path: str
   rclone_config: str?

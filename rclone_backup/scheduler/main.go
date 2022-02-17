@@ -31,13 +31,15 @@ var (
 
 type Config struct {
 	Jobs         []JobConfig
-	DryRun       bool   `yaml:"dry_run"`
-	RunOnce      bool   `yaml:"run_once"`
-	ConfigPath   string `yaml:"config_path"`
-	RcloneConfig string `yaml:"rclone_config"`
-	NoRename     bool   `yaml:"no_rename"`
-	NoUnrename   bool   `yaml:"no_unrename"`
-	LogLevel     string `yaml:"log_level"`
+	Flags        Flags
+	ExtraFlags   []string `yaml:"extra_flags"`
+	DryRun       bool     `yaml:"dry_run"`
+	RunOnce      bool     `yaml:"run_once"`
+	ConfigPath   string   `yaml:"config_path"`
+	RcloneConfig string   `yaml:"rclone_config"`
+	NoRename     bool     `yaml:"no_rename"`
+	NoUnrename   bool     `yaml:"no_unrename"`
+	LogLevel     string   `yaml:"log_level"`
 }
 
 type JobConfig struct {
@@ -48,7 +50,20 @@ type JobConfig struct {
 	Destination string
 	Include     []string
 	Exclude     []string
-	Flags       []string
+	Flags       Flags
+	ExtraFlags  []string `yaml:"extra_flags"`
+}
+
+type Flags map[string]string
+
+func (f *Flags) UnmarshalYAML(n *yaml.Node) error {
+	type FlagsT Flags
+	var content string
+	err := n.Decode(&content)
+	if err != nil {
+		return err
+	}
+	return yaml.Unmarshal([]byte(content), (*FlagsT)(f))
 }
 
 type BackupConfig struct {
@@ -194,7 +209,10 @@ func CreateJob(job JobConfig) func() {
 			}
 
 			// append any extra flags
-			args = append(args, job.Flags...)
+			args = append(args, FlagMapToList(config.Flags)...)
+			args = append(args, config.ExtraFlags...)
+			args = append(args, FlagMapToList(job.Flags)...)
+			args = append(args, job.ExtraFlags...)
 
 			start := time.Now()
 
