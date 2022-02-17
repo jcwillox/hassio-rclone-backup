@@ -10,6 +10,7 @@ You can also directly sync your Home Configuration e.g. `/config`, `/share`, `/s
 ## Installation
 
 [![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fjcwillox%2Fhassio-rclone-backup)
+[![Open your Home Assistant instance and show the dashboard of a Supervisor add-on.](https://my.home-assistant.io/badges/supervisor_addon.svg)](https://my.home-assistant.io/redirect/supervisor_addon/?addon=19a172aa_rclone_backup)
 
 Add the repository URL under **Supervisor** → **Add-on store** → **⋮** → **Manage add-on repositories**
 
@@ -43,14 +44,19 @@ password2 = REDACTED
 **Addon configuration**
 
 ```yaml
-schedule: 10 4 * * *
-command: sync
-sources:
-  - /backup
-destination: 'hassbackup:'
-include:
-  - DailyBackup*
-# we can also disable google drive trash using flags
-flags: 
-  - --drive-use-trash=false
+jobs:
+  - name: Sync Daily Backups
+    schedule: 10 4 * * *
+    command: sync
+    sources:
+      - /backup
+    destination: 'hassbackup:'
+    include:
+      - DailyBackup*
+    exclude: []
+    # we can also disable google drive trash using flags
+    flags:
+      - --drive-use-trash=false
+dry_run: false
+config_path: /config/rclone.conf
 ```
