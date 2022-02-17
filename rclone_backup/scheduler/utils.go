@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"github.com/jcwillox/emerald"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -18,15 +20,6 @@ func FormatDuration(d time.Duration) string {
 func ArrayContains(arr []string, s string) bool {
 	for _, s2 := range arr {
 		if s == s2 {
-			return true
-		}
-	}
-	return false
-}
-
-func ArrayHasPrefix(arr []string, s string) bool {
-	for _, s2 := range arr {
-		if strings.HasPrefix(s, s2) {
 			return true
 		}
 	}
@@ -69,4 +62,25 @@ func FlagMapToList(flags map[string]string) []string {
 		}
 	}
 	return flagList
+}
+
+func GetRcloneRemotes() ([]string, error) {
+	cmd := exec.Command("rclone", "listremotes", "--config", config.ConfigPath)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, nil
+	}
+	err = cmd.Start()
+	if err != nil {
+		return nil, err
+	}
+	scanner := bufio.NewScanner(stdout)
+	var remotes []string
+	for scanner.Scan() {
+		remotes = append(remotes, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return remotes, err
+	}
+	return remotes, cmd.Wait()
 }

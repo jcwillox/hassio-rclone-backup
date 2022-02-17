@@ -19,14 +19,13 @@ const (
 )
 
 var (
-	AllowedSources  = []string{"/backup", "/config", "/share", "/ssl", "/media"}
-	AllowedCommands = []string{"sync", "copy", "move"}
-	Arrow           = emerald.Color("->", "black")
+	Arrow = emerald.Color("->", "black")
 )
 
 var (
 	config   = &Config{}
 	boldCyan = emerald.ColorFunc("cyan+b")
+	remotes  []string
 )
 
 type Config struct {
@@ -111,6 +110,11 @@ func main() {
 		Infoln("rclone config found")
 	}
 
+	remotes, err = GetRcloneRemotes()
+	if err != nil {
+		Fatalln("failed to retrieve list of rclone remotes")
+	}
+
 	Infoln("checking job configs...")
 	for _, job := range config.Jobs {
 		err := CheckJob(job)
@@ -166,18 +170,28 @@ func LoadConfig() (*Config, error) {
 }
 
 func CheckJob(job JobConfig) error {
-	// check allowed command
-	if !ArrayContains(AllowedCommands, job.Command) {
-		return fmt.Errorf("command '%s' is not allowed; must be one of %s", job.Command, AllowedCommands)
-	}
 	for _, source := range job.Sources {
-		// check allowed source
-		if !ArrayHasPrefix(AllowedSources, source) {
-			return fmt.Errorf("source '%s' is not allowed; must be one of %s", source, AllowedSources)
+		if err := CheckRemote(source); err != nil {
+			return err
 		}
-		// check source exists
-		if stat, err := os.Stat(source); stat == nil {
-			return fmt.Errorf("source '%s' does not exist; %v", source, err)
+	}
+	if err := CheckRemote(job.Destination); err != nil {
+		return err
+	}
+	return nil
+}
+
+func CheckRemote(path string) error {
+	parts := strings.SplitN(path, ":", 2)
+	if len(parts) == 2 {
+		remote := parts[0] + ":"
+		if !ArrayContains(remotes, remote) {
+			return fmt.Errorf("remote '%s' does not exist; configured remotes are [%s]", remote, remotes)
+		}
+	} else if len(parts) == 1 {
+		// check local path exists
+		if stat, err := os.Stat(parts[0]); stat == nil {
+			return fmt.Errorf("local target '%s' does not exist; %v", parts[0], err)
 		}
 	}
 	return nil
