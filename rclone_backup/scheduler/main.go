@@ -1,13 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/go-co-op/gocron"
 	"github.com/gosimple/slug"
 	"github.com/jcwillox/emerald"
 	"gopkg.in/yaml.v3"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 )
@@ -42,15 +42,17 @@ type Config struct {
 }
 
 type JobConfig struct {
-	Name        string
-	Schedule    string
-	Command     string
-	Sources     []string
-	Destination string
-	Include     []string
-	Exclude     []string
-	Flags       Flags
-	ExtraFlags  []string `yaml:"extra_flags"`
+	Name         string
+	Schedule     string
+	Command      string
+	Source       string
+	Sources      []string
+	Destination  string
+	Destinations []string
+	Include      []string
+	Exclude      []string
+	Flags        Flags
+	ExtraFlags   []string `yaml:"extra_flags"`
 }
 
 type Flags map[string]string
@@ -116,11 +118,18 @@ func main() {
 	}
 
 	Infoln("checking job configs...")
-	for _, job := range config.Jobs {
+	for i, job := range config.Jobs {
+		if job.Source != "" {
+			job.Sources = []string{job.Source}
+		}
+		if job.Destination != "" {
+			job.Destinations = []string{job.Destination}
+		}
 		err := CheckJob(job)
 		if err != nil {
 			Fatalln(err)
 		}
+		config.Jobs[i] = job
 	}
 
 	if config.RunOnce {
@@ -148,8 +157,7 @@ func main() {
 			if err != nil {
 				Fatalln("failed to schedule job", "'"+job.Name+"'", err)
 			}
-
-			PrintJob(job)
+			emerald.Println(JobInfo(job, job.Schedule, "@startup"))
 		}
 
 		scheduler.StartBlocking()
@@ -170,13 +178,18 @@ func LoadConfig() (*Config, error) {
 }
 
 func CheckJob(job JobConfig) error {
+	if len(job.Sources) == 0 {
+		return errors.New("at least 1 source must be specified")
+	}
 	for _, source := range job.Sources {
 		if err := CheckRemote(source); err != nil {
 			return err
 		}
 	}
-	if err := CheckRemote(job.Destination); err != nil {
-		return err
+	for _, destination := range job.Destinations {
+		if err := CheckRemote(destination); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -197,73 +210,68 @@ func CheckRemote(path string) error {
 	return nil
 }
 
-// CreateJob create run job closure with the job config
-func CreateJob(job JobConfig) func() {
-	return func() {
-		for _, source := range job.Sources {
-			// adjust destination with multiple sources
-			subfolder := ""
-			if len(job.Sources) > 1 {
-				subfolder = source
-			}
-
-			// generate rclone command
-			args := []string{job.Command, source, job.Destination + subfolder, "--verbose", "--config", config.ConfigPath}
-
-			for _, inclusion := range job.Include {
-				args = append(args, "--include", inclusion)
-			}
-
-			for _, exclusion := range job.Exclude {
-				args = append(args, "--exclude", exclusion)
-			}
-
-			if config.DryRun {
-				args = append(args, "--dry-run")
-			}
-
-			// append any extra flags
-			args = append(args, FlagMapToList(config.Flags)...)
-			args = append(args, config.ExtraFlags...)
-			args = append(args, FlagMapToList(job.Flags)...)
-			args = append(args, job.ExtraFlags...)
-
-			start := time.Now()
-
-			cmd := exec.Command("rclone", args...)
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			cmd.Stdin = os.Stdin
-
-			if job.Name != "" {
-				Infoln("running", emerald.Cyan+"\""+job.Name+"\""+emerald.Green+";", emerald.HighlightPathStat(source), Arrow, job.Destination)
-			} else {
-				Infoln("running job", emerald.HighlightPathStat(source), Arrow, job.Destination)
-			}
-
-			Debugln("rclone", args)
-
-			var undoRename func()
-			if strings.HasPrefix(source, BackupPath) && !config.NoRename {
-				var err error
-				undoRename, err = RenameBackups()
-				if err != nil {
-					Errorln("failed to rename backups, aborting upload", err)
-					return
-				}
-			}
-
-			err := cmd.Run()
-			if err != nil {
-				Errorln("failed to run rclone command", err)
-				return
-			}
-
-			if undoRename != nil && !config.NoUnrename {
-				undoRename()
-			}
-
-			Infoln("finished in", boldCyan(FormatDuration(time.Since(start))))
+func JobInfo(job JobConfig, prefix string, defaultName string, sourceDest ...string) string {
+	sb := strings.Builder{}
+	if prefix != "" {
+		sb.WriteString(prefix)
+		sb.WriteRune(' ')
+	}
+	if job.Name != "" {
+		sb.WriteString(emerald.Cyan + "\"" + job.Name + "\"" + emerald.Green + "; ")
+	} else if defaultName != "" {
+		sb.WriteString(defaultName)
+		sb.WriteString("; ")
+	}
+	// allow overriding sources and destinations
+	if len(sourceDest) > 0 {
+		job.Sources = sourceDest[:1]
+		if len(sourceDest) > 1 {
+			job.Destinations = sourceDest[1:]
 		}
 	}
+	// print sources
+	for i, source := range job.Sources {
+		sb.WriteString(HighlightRemote(source))
+		if i < len(job.Sources)-1 {
+			sb.WriteString(", ")
+		}
+	}
+	// print destinations
+	if len(job.Destinations) > 0 {
+		sb.WriteRune(' ')
+		sb.WriteString(Arrow)
+		sb.WriteRune(' ')
+		for i, destination := range job.Destinations {
+			if len(job.Sources) > 1 {
+				for j, source := range job.Sources {
+					sb.WriteString(HighlightRemote(destination))
+					sb.WriteString(emerald.HighlightPath(source))
+					if j < len(job.Sources)-1 {
+						sb.WriteString(", ")
+					}
+				}
+			} else {
+				sb.WriteString(HighlightRemote(destination))
+			}
+			if i < len(job.Destinations)-1 {
+				sb.WriteString(", ")
+			}
+		}
+	}
+	return sb.String()
+}
+
+func HighlightRemote(path string) string {
+	parts := strings.SplitN(path, ":", 2)
+	if len(parts) == 2 {
+		remote := parts[0] + ":"
+		if parts[1] != "" {
+			return emerald.Bold + emerald.Magenta + remote + emerald.HighlightPath(parts[1])
+		}
+		return emerald.Bold + emerald.Magenta + remote + emerald.Reset
+	} else if len(parts) == 1 {
+		// local path
+		return emerald.HighlightPathStat(parts[0])
+	}
+	return ""
 }

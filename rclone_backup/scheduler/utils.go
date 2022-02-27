@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"github.com/jcwillox/emerald"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -24,23 +23,6 @@ func ArrayContains(arr []string, s string) bool {
 		}
 	}
 	return false
-}
-
-func PrintJob(job JobConfig) {
-	if job.Schedule != "" {
-		emerald.Print(job.Schedule, " ")
-	}
-	if job.Name != "" {
-		emerald.Print(emerald.Red, "\"", job.Name, "\" ", emerald.Reset)
-	}
-	emerald.Print("[")
-	for i, source := range job.Sources {
-		emerald.Print(emerald.HighlightPathStat(source))
-		if i < len(job.Sources)-1 {
-			emerald.Print(",")
-		}
-	}
-	emerald.Print("] ", job.Destination, "\n")
 }
 
 func FlagMapToList(flags map[string]string) []string {

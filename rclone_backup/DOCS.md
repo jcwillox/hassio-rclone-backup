@@ -89,6 +89,31 @@ Prevents renaming backups back to their original name, with this enabled the bac
 
 ## Job Config
 
+**Option:** `sources`
+
+List of source locations in the format `remote:path` or for local paths just `path`, e.g. `/backup`, `/config`, `/share`, `/ssl`, `/media`.
+
+**Option:** `source`
+
+A slightly cleaner way to specify a single source, this option will override the `sources` option.
+
+**Option:** `destinations`
+
+A list of locations to write to in the format `remote:path` or for local paths just `path`, see [rclone docs](https://rclone.org/docs).
+
+**Option:** `destination`
+
+A slightly cleaner way to specify a single destination, this option will override the `destinations` option.
+
+> **Multiple Sources**
+>
+> When there are multiple sources each source will be backed-up to the destination under `destination/source`
+> otherwise they will be directly under `destination`.
+>
+> **Multiple Destinations**
+>
+> All sources are backed-up to each destination following the rules for multiple sources mentioned above.
+
 **Option:** `name`
 
 Optionally you can provide a friendly name for the job, this can be useful to identify which job is being run when you have multiple.
@@ -100,16 +125,6 @@ Specify when the rclone backup should run using cron syntax. If the `schedule` o
 **Option:** `command`
 
 The rclone command to run e.g. `sync`, `copy`, `move`.
-
-**Option:** `sources`
-
-List of directories to read from must one of or a subdirectory of `/backup`, `/config`, `/share`, `/ssl`, `/media`.
-
-*When specifying multiple sources the files will be stored under `destination/source` otherwise they will be directly under `destination`.*
-
-**Option:** `destination`
-
-The location to write to in the format `remote:path`, see [rclone docs](https://rclone.org/docs).
 
 **Option:** `include`
 

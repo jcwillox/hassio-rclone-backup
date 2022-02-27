@@ -29,16 +29,19 @@ options:
       include: []
       exclude: []
       flags: {}
-  dry_run: false
+  dry_run: true
   config_path: "/config/rclone.conf"
 schema:
   jobs:
     - name: str?
       schedule: str?
       command: str
+      source: str?
       sources:
-        - str
-      destination: str
+        - str?
+      destination: str?
+      destinations:
+        - str?
       include:
         - str
       exclude:
