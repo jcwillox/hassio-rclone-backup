@@ -43,9 +43,9 @@ schema:
       destinations:
         - str?
       include:
-        - str
+        - str?
       exclude:
-        - str
+        - str?
       flags: "match({(('[^ ]+': *?('([^']|(?<=\\\\)')*'|None|False|True))(, *?'[^ ]+': *?('([^']|(?<=\\\\)')*'|None|False|True))*)?})?"
       extra_flags:
         - str?
