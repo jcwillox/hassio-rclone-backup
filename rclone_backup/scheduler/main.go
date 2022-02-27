@@ -147,17 +147,19 @@ func main() {
 		Infoln("scheduled jobs:")
 
 		for _, job := range config.Jobs {
-			if job.Schedule == "" {
-				// schedule to run immediately
-				_, err = scheduler.Every(1).Second().LimitRunsTo(1).Do(CreateJob(job))
-			} else {
+			if job.Schedule != "" {
 				_, err = scheduler.Cron(job.Schedule).Do(CreateJob(job))
+				if err != nil {
+					Fatalln("failed to schedule job", "'"+job.Name+"'", err)
+				}
 			}
+		}
 
-			if err != nil {
-				Fatalln("failed to schedule job", "'"+job.Name+"'", err)
+		// run all immediate jobs
+		for _, job := range config.Jobs {
+			if job.Schedule == "" {
+				CreateJob(job)()
 			}
-			emerald.Println(JobInfo(job, job.Schedule, "@startup"))
 		}
 
 		scheduler.StartBlocking()
