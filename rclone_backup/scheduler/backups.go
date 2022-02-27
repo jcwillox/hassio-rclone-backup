@@ -44,7 +44,7 @@ func RenameBackups() (func(), error) {
 		}
 	}
 
-	Infoln("renamed", boldCyan(strconv.Itoa(len(renamed))), emerald.Green+"backups", emerald.Blue)
+	Infoln("renamed", boldCyan(strconv.Itoa(len(renamed))), emerald.Green+"backups")
 
 	return func() {
 		for file, dest := range renamed {

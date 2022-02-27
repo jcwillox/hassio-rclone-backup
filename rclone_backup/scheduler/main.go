@@ -144,7 +144,7 @@ func main() {
 		// only run 1 job at a time to prevent issues with file locks
 		scheduler.SetMaxConcurrentJobs(1, gocron.WaitMode)
 
-		Infoln("scheduled jobs:")
+		PrintJobs(config.Jobs)
 
 		for _, job := range config.Jobs {
 			if job.Schedule != "" {
@@ -212,14 +212,10 @@ func CheckRemote(path string) error {
 	return nil
 }
 
-func JobInfo(job JobConfig, prefix string, defaultName string, sourceDest ...string) string {
+func JobInfo(job JobConfig, defaultName string, sourceDest ...string) string {
 	sb := strings.Builder{}
-	if prefix != "" {
-		sb.WriteString(prefix)
-		sb.WriteRune(' ')
-	}
 	if job.Name != "" {
-		sb.WriteString(emerald.Cyan + "\"" + job.Name + "\"" + emerald.Green + "; ")
+		sb.WriteString(emerald.Cyan + "\"" + job.Name + "\"" + emerald.Reset + "; ")
 	} else if defaultName != "" {
 		sb.WriteString(defaultName)
 		sb.WriteString("; ")
@@ -227,7 +223,7 @@ func JobInfo(job JobConfig, prefix string, defaultName string, sourceDest ...str
 	// allow overriding sources and destinations
 	if len(sourceDest) > 0 {
 		job.Sources = sourceDest[:1]
-		if len(sourceDest) > 1 {
+		if len(sourceDest) > 1 && sourceDest[1] != "" {
 			job.Destinations = sourceDest[1:]
 		}
 	}

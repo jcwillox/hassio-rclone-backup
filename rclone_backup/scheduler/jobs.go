@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/jcwillox/emerald"
 	"os"
 	"os/exec"
 	"strings"
@@ -80,15 +81,10 @@ func RunJob(job JobConfig, source string, destination string) {
 	args = append(args, FlagMapToList(job.Flags)...)
 	args = append(args, job.ExtraFlags...)
 
-	start := time.Now()
-
-	cmd := exec.Command("rclone", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-
-	Infoln(JobInfo(job, "running", "job", source, destination))
+	Infoln("running", JobInfo(job, "job", source, destination))
 	Debugln("rclone", args)
+
+	start := time.Now()
 
 	var undoRename func()
 	if strings.HasPrefix(source, BackupPath) && !config.NoRename {
@@ -100,11 +96,19 @@ func RunJob(job JobConfig, source string, destination string) {
 		}
 	}
 
+	emerald.Print(emerald.Blue)
+
+	cmd := exec.Command("rclone", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	cmd.Stdin = os.Stdin
 	err := cmd.Run()
 	if err != nil {
 		Errorln("failed to run rclone command", err)
 		return
 	}
+
+	emerald.Print(emerald.Reset)
 
 	if undoRename != nil && !config.NoUnrename {
 		undoRename()

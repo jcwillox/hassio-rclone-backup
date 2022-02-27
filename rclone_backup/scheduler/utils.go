@@ -2,11 +2,36 @@ package main
 
 import (
 	"bufio"
+	"github.com/jcwillox/emerald"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 )
+
+func PrintJobs(jobs []JobConfig) {
+	lSchedule := 8
+	lCommand := 0
+	for _, job := range jobs {
+		if len(job.Schedule) > lSchedule {
+			lSchedule = len(job.Schedule)
+		}
+		if len(job.Command) > lCommand {
+			lCommand = len(job.Command)
+		}
+	}
+
+	Infoln("scheduled jobs:")
+
+	for _, job := range config.Jobs {
+		if job.Schedule == "" {
+			job.Schedule = "@startup"
+		}
+		emerald.Print(job.Schedule, strings.Repeat(" ", lSchedule-len(job.Schedule)), " ")
+		emerald.Print(emerald.Yellow, job.Command, emerald.Reset, strings.Repeat(" ", lCommand-len(job.Command)), " ")
+		emerald.Println(JobInfo(job, ""))
+	}
+}
 
 func FormatDuration(d time.Duration) string {
 	scale := 100 * time.Second
