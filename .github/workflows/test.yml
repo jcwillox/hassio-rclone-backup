@@ -1,6 +1,13 @@
 name: 'Test'
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - "main"
+      - "feat**"
+    tags-ignore:
+      - "**"
+  pull_request:
 
 env:
   TARGET: rclone_backup
