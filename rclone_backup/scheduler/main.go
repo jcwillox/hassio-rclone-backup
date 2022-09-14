@@ -77,12 +77,12 @@ func main() {
 	slug.Lowercase = false
 	slug.CustomSub = map[string]string{
 		" ": "_",
-		"(": "",
-		")": "",
-		"[": "",
-		"]": "",
-		":": "",
-		",": "",
+		"(": "_",
+		")": "_",
+		"[": "_",
+		"]": "_",
+		":": "_",
+		",": "_",
 	}
 
 	// load addon configuration

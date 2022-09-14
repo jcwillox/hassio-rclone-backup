@@ -27,7 +27,7 @@ func RenameBackups() (func(), error) {
 			continue
 		}
 
-		friendlyName := slug.Make(config.Name) + ".tar"
+		friendlyName := ReplaceUnderscores(slug.Make(config.Name)) + ".tar"
 
 		// we only want to rename backups that are named with their slug
 		fileName := strings.TrimSuffix(filepath.Base(file), ".tar")

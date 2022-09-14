@@ -91,3 +91,13 @@ func GetRcloneRemotes() ([]string, error) {
 	}
 	return remotes, cmd.Wait()
 }
+
+func ReplaceUnderscores(s string) string {
+	sb := strings.Builder{}
+	for i, r := range s {
+		if i == 0 || !(r == '_' && s[i-1] == '_') {
+			sb.WriteRune(r)
+		}
+	}
+	return sb.String()
+}
