@@ -54,7 +54,7 @@ schema:
   extra_flags:
     - str?
   run_once: bool?
-  config_path: str
+  config_path: str?
   rclone_config: str?
   no_rename: bool?
   no_unrename: bool?
