@@ -1,12 +1,12 @@
 module scheduler
 
-go 1.17
+go 1.19
 
 require (
-	github.com/go-co-op/gocron v1.13.0
+	github.com/go-co-op/gocron v1.17.0
 	github.com/gosimple/slug v1.12.0
 	github.com/jcwillox/emerald v0.3.3
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

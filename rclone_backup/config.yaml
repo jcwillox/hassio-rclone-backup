@@ -9,6 +9,7 @@ arch:
   - aarch64
   - amd64
   - i386
+init: false
 url: https://github.com/jcwillox/hassio-rclone-backup
 startup: application
 boot: auto

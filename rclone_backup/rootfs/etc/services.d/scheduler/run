@@ -1,0 +1,11 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Start the scheduler service
+# s6-overlay docs: https://github.com/just-containers/s6-overlay
+# ==============================================================================
+
+bashio::log.info "Installed rclone version:"
+bashio::log.info "$(rclone -V)"
+
+bashio::log.info "starting scheduler..."
+exec /usr/bin/scheduler

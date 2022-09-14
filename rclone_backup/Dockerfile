@@ -1,5 +1,5 @@
 ARG BUILD_FROM
-FROM golang:1.17-alpine as build
+FROM golang:1.19-alpine as build
 
 ARG BUILD_ARCH
 ARG BUILD_FROM
@@ -35,11 +35,14 @@ ARG BUILD_REPOSITORY
 ARG BUILD_SHA
 
 ENV LANG C.UTF-8
-ENV RCLONE_INSTALLED_VERSION 1.58.0
+ENV RCLONE_INSTALLED_VERSION 1.59.1
 
 # Copy root filesystem
 COPY rootfs /
 COPY --from=build /app/scheduler.bin /usr/bin/scheduler
+
+# Fix permissions
+RUN chmod a+x /etc/services.d/scheduler/*
 
 # Install requirements for add-on
 RUN if [ "${BUILD_ARCH}" = "armhf" ]; then \
