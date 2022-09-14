@@ -1,6 +1,6 @@
 # Rclone Backup
 
-Backup your Home Assistant configuration or backups to over 40 cloud providers using [Rclone](https://rclone.org/).
+Backup your Home Assistant configuration or backups to over [40 cloud providers](https://rclone.org/#providers) using [Rclone](https://rclone.org/).
 
 ```yaml
 jobs:
@@ -85,7 +85,12 @@ Disable the renaming of backups before uploading them, with this enabled backups
 
 Prevents renaming backups back to their original name, with this enabled the backup files will be renamed to use their friendly name and this will persist on disk.
 
-*Note: this option can apparently cause issues with restoring backups but won't affect the actual integrity of the snapshots, exercise caution when using it.*
+*Note: this option can apparently cause issues with restoring backups through the WebUI, however, selecting **⋮** → **Reload** should fix it. 
+This won't affect the actual integrity of the backups.*
+
+**Option:** `no_slugify`
+
+This will disable the slugification of backup names. This means the **user** is responsible for ensuring their backup names are **valid** filenames for their filesystem and the destination filesystem.
 
 ## Job Config
 
@@ -129,6 +134,18 @@ The rclone command to run e.g. `sync`, `copy`, `move`.
 **Option:** `include`
 
 List of files or folders to include, see [rclone filtering](https://rclone.org/filtering).
+
+*Note: these filters are matching the backups name on the filesystem, if you have not disabled renaming then this will be a slugified version of the backups name, this will effectively replace all special characters with an `_` and remove duplicate underscores.*
+
+To preview the slugified names of your backups you can add a startup job like the following.
+
+```yaml
+jobs:
+  - command: ls
+    name: List Local Backups
+    sources:
+      - /backup
+```
 
 **Option:** `exclude`
 

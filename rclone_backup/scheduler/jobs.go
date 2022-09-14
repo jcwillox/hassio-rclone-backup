@@ -89,7 +89,7 @@ func RunJob(job JobConfig, source string, destination string) {
 	var undoRename func()
 	if strings.HasPrefix(source, BackupPath) && !config.NoRename {
 		var err error
-		undoRename, err = RenameBackups()
+		undoRename, err = RenameBackups(config.NoSlugify)
 		if err != nil {
 			Errorln("failed to rename backups, aborting upload", err)
 			return

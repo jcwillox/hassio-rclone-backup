@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func RenameBackups() (func(), error) {
+func RenameBackups(noSlugify bool) (func(), error) {
 	renamed := make(map[string]string)
 	files, err := filepath.Glob(filepath.Join(BackupPath, "*.tar"))
 	if err != nil {
@@ -27,7 +27,12 @@ func RenameBackups() (func(), error) {
 			continue
 		}
 
-		friendlyName := ReplaceUnderscores(slug.Make(config.Name)) + ".tar"
+		var friendlyName string
+		if noSlugify {
+			friendlyName = config.Name + ".tar"
+		} else {
+			friendlyName = ReplaceUnderscores(slug.Make(config.Name)) + ".tar"
+		}
 
 		// we only want to rename backups that are named with their slug
 		fileName := strings.TrimSuffix(filepath.Base(file), ".tar")

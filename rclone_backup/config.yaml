@@ -59,5 +59,6 @@ schema:
   rclone_config: str?
   no_rename: bool?
   no_unrename: bool?
+  no_slugify: bool?
   log_level: list(debug|info|warning|error|fatal)?
 image: ghcr.io/jcwillox/hassio-rclone-backup/{arch}

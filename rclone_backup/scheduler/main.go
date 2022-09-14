@@ -38,6 +38,7 @@ type Config struct {
 	RcloneConfig string   `yaml:"rclone_config"`
 	NoRename     bool     `yaml:"no_rename"`
 	NoUnrename   bool     `yaml:"no_unrename"`
+	NoSlugify    bool     `yaml:"no_slugify"`
 	LogLevel     string   `yaml:"log_level"`
 }
 
