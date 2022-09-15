@@ -133,6 +133,8 @@ func main() {
 		config.Jobs[i] = job
 	}
 
+	PrintJobs(config.Jobs)
+
 	if config.RunOnce {
 		for _, job := range config.Jobs {
 			if job.Schedule == "" {
@@ -144,8 +146,6 @@ func main() {
 
 		// only run 1 job at a time to prevent issues with file locks
 		scheduler.SetMaxConcurrentJobs(1, gocron.WaitMode)
-
-		PrintJobs(config.Jobs)
 
 		for _, job := range config.Jobs {
 			if job.Schedule != "" {
