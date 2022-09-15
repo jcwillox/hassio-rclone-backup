@@ -13,6 +13,8 @@ init: false
 url: https://github.com/jcwillox/hassio-rclone-backup
 startup: application
 boot: auto
+ingress: true
+panel_icon: mdi:cloud-sync
 map:
   - config:rw
   - backup:rw

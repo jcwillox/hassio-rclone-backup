@@ -1,11 +1,11 @@
 #!/usr/bin/with-contenv bashio
 # ==============================================================================
-# Start the scheduler service
+# Start the Rclone Web GUI
 # s6-overlay docs: https://github.com/just-containers/s6-overlay
 # ==============================================================================
 
-bashio::log.info "Installed rclone version:"
-bashio::log.info "$(rclone -V)"
+bashio::log.info "Starting Rclone Web GUI..."
 
-bashio::log.info "Starting Scheduler..."
-exec /usr/bin/scheduler
+exec rclone rcd --rc-no-auth --rc-web-gui-no-open-browser \
+  --rc-addr ":8099" --rc-allow-origin "172.30.32.2" \
+  --rc-files "/usr/share/rclone-webui-react"

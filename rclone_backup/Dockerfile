@@ -36,13 +36,22 @@ ARG BUILD_SHA
 
 ENV LANG C.UTF-8
 ENV RCLONE_INSTALLED_VERSION 1.59.1
+ENV RCLONE_WEBUI_INSTALLED_VERSION 2.0.5
 
 # Copy root filesystem
 COPY rootfs /
 COPY --from=build /app/scheduler.bin /usr/bin/scheduler
 
+# Download Web GUI
+RUN curl -LJo /tmp/currentbuild.zip https://github.com/rclone/rclone-webui-react/releases/download/v"${RCLONE_WEBUI_INSTALLED_VERSION}"/currentbuild.zip \
+    && unzip /tmp/currentbuild.zip -d /tmp \
+    && mkdir -p /usr/share/rclone-webui-react \
+    && mv /tmp/build/* /usr/share/rclone-webui-react \
+    && rm -rf /tmp/*
+
 # Fix permissions
-RUN chmod a+x /etc/services.d/scheduler/*
+RUN chmod a+x /etc/cont-init.d/*
+RUN chmod a+x /etc/services.d/*/*
 
 # Install requirements for add-on
 RUN if [ "${BUILD_ARCH}" = "armhf" ]; then \
@@ -61,7 +70,7 @@ RUN if [ "${BUILD_ARCH}" = "armhf" ]; then \
     && unzip /tmp/rclone.zip -d /tmp \
     && cp /tmp/rclone-*/rclone /usr/bin/rclone  \
     && chmod 755 /usr/bin/rclone \
-    && rm -fr /tmp/rclone* \
+    && rm -rf /tmp/rclone* \
     && mkdir -p /root/.config/rclone
 
 # Labels

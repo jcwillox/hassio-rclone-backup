@@ -161,6 +161,8 @@ List of flags to give the rclone command, applied globally to all jobs. For use 
 
 ---
 
-### Generating the rclone config
+### Configuring Rclone Remotes
 
-I'd recommend consulting the [rclone docs](https://rclone.org/docs/), but simply you will need to install rclone locally and run the `rclone config` command, then follow the prompts to configure the services you need. The generated config is located by default at `$HOME/.config/rclone/rclone.conf` (alternatively run `rclone config file` and it will print the config location).
+The addon now supports ingress and the Rclone Web UI, you can access this by clicking the **Open Web UI** button in the addon info panel. You do not need a username or password and can just click the login button. Then you can click **Configs** -> **Create new config** to create a new remote.
+
+For more information, or to configure rclone without using the WebUI, you can consult the [rclone docs](https://rclone.org/docs/). The rclone config can be found at `/config/rclone.conf` by default.

@@ -72,7 +72,7 @@ func FlagMapToList(flags map[string]string) []string {
 }
 
 func GetRcloneRemotes() ([]string, error) {
-	cmd := exec.Command("rclone", "listremotes", "--config", config.ConfigPath)
+	cmd := exec.Command("rclone", "listremotes")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, nil

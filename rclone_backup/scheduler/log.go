@@ -25,6 +25,10 @@ func Infoln(a ...interface{}) {
 	Logln("INFO", emerald.Green, a...)
 }
 
+func Warnln(a ...interface{}) {
+	Logln("WARN", emerald.Yellow, a...)
+}
+
 func Errorln(a ...interface{}) {
 	Logln("ERROR", emerald.Red, a...)
 }

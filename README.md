@@ -7,6 +7,10 @@ Rclone Backup can sync specific backups, e.g. backups starting with `AutoBackup*
 
 You can also directly sync your Home Configuration e.g. `/config`, `/share`, `/ssl`, `/media` to a cloud service or to another machine using SFTP. Rclone is smart and will only upload changed files.
 
+The addon also supports monitoring rclone and configuring or exploring remotes through [rclone-webui-react](https://github.com/rclone/rclone-webui-react).
+
+![webui-example](https://github.com/jcwillox/hassio-rclone-backup/raw/main/rclone_backup/example.png)
+
 ## Installation
 
 [![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fjcwillox%2Fhassio-rclone-backup)

@@ -93,22 +93,13 @@ func main() {
 		Fatalln("failed to read or parse config", err)
 	}
 
-	// write rclone config from addon config
 	if config.RcloneConfig != "" {
-		err := os.WriteFile(DefaultConfigPath, []byte(config.RcloneConfig), 0666)
-		if err != nil {
-			Fatalln("failed to write config")
-		}
 		config.ConfigPath = DefaultConfigPath
 	}
 
 	// check rclone config exists
 	if stat, _ := os.Stat(config.ConfigPath); stat == nil {
-		Fatalln(
-			"rclone config does not exist!" +
-				"\nIf this is your first time starting this add-on ensure to" +
-				"\ncreate a valid rclone configuration at \"" + config.ConfigPath + "\"",
-		)
+		Warnln("rclone config not found at \"" + config.ConfigPath + "\"")
 	} else {
 		Infoln("rclone config found")
 	}
