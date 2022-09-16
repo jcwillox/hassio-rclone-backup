@@ -9,7 +9,7 @@ You can also directly sync your Home Configuration e.g. `/config`, `/share`, `/s
 
 The addon also supports monitoring rclone and configuring or exploring remotes through [rclone-webui-react](https://github.com/rclone/rclone-webui-react).
 
-![webui-example](https://github.com/jcwillox/hassio-rclone-backup/raw/main/rclone_backup/example.png)
+![webui-example](https://github.com/jcwillox/hassio-rclone-backup/raw/main/example.png)
 
 ## Installation
 
