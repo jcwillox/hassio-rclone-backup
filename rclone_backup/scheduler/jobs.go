@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/jcwillox/emerald"
 	"os"
 	"os/exec"
@@ -91,7 +92,9 @@ func RunJob(job JobConfig, source string, destination string) {
 		var err error
 		undoRename, err = RenameBackups(config.NoSlugify)
 		if err != nil {
-			Errorln("failed to rename backups, aborting upload", err)
+			msg := fmt.Sprintf("failed to rename backups, aborting upload: %s", err)
+			Errorln(msg)
+			FireJobEvent(EventJobFailed, job, source, destination, start, msg)
 			return
 		}
 	}
@@ -104,7 +107,9 @@ func RunJob(job JobConfig, source string, destination string) {
 	cmd.Stdin = os.Stdin
 	err := cmd.Run()
 	if err != nil {
-		Errorln("failed to run rclone command", err)
+		msg := fmt.Sprintf("failed to run rclone command: %s", err)
+		Errorln(msg)
+		FireJobEvent(EventJobFailed, job, source, destination, start, msg)
 		return
 	}
 
@@ -115,4 +120,5 @@ func RunJob(job JobConfig, source string, destination string) {
 	}
 
 	Infoln("finished in", boldCyan(FormatDuration(time.Since(start))))
+	FireJobEvent(EventJobSuccessful, job, source, destination, start, "")
 }

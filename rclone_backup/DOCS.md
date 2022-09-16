@@ -92,6 +92,10 @@ This won't affect the actual integrity of the backups.*
 
 This will disable the slugification of backup names. This means the **user** is responsible for ensuring their backup names are **valid** filenames for their filesystem and the destination filesystem.
 
+**Option:** `no_events`
+
+Disable sending completion and failure events to Home Assistant.
+
 ## Job Config
 
 **Option:** `sources`
@@ -166,3 +170,29 @@ List of flags to give the rclone command, applied globally to all jobs. For use 
 The addon now supports ingress and the Rclone Web UI, you can access this by clicking the **Open Web UI** button in the addon info panel. You do not need a username or password and can just click the login button. Then you can click **Configs** -> **Create new config** to create a new remote.
 
 For more information, or to configure rclone without using the WebUI, you can consult the [rclone docs](https://rclone.org/docs/). The rclone config can be found at `/config/rclone.conf` by default.
+
+---
+
+## Events
+
+> Blueprint to send notifications based on these events. [[source]](https://github.com/jcwillox/home-assistant-blueprints)
+>
+> [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A//raw.githubusercontent.com/jcwillox/home-assistant-blueprints/main/automation/notify_rclone_backup.yaml)
+
+The addon will fire events using Home Assistant's event bus whenever a job is completed or fails.
+
+**Event:** `rclone_backup.job_successful`
+
+**Event:** `rclone_backup.job_failed`
+
+Both events will have the following attributes.
+
+| Attribute     | Description                                            |
+| ------------- | ------------------------------------------------------ |
+| `name`        | The name of the job.                                   |
+| `command`     | The rclone command that was run.                       |
+| `source`      | The source location.                                   |
+| `destination` | The destination location. (optional)                   |
+| `error`       | The error message if the job failed. (optional)        |
+| `duration`    | The duration of the job as a human string, eg. `1m2s`. |
+| `seconds`     | The duration of the job in seconds.                    |
