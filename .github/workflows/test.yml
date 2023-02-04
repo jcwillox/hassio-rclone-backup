@@ -1,4 +1,4 @@
-name: 'Test'
+name: "Test"
 
 on:
   push:
@@ -17,14 +17,17 @@ jobs:
     name: Test Build
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v2
-    - name: Setup yq
+    - name: "Checkout the repository"
+      uses: actions/checkout@v3
+
+    - name: "Setup yq"
       uses: frenck/action-setup-yq@v1
-    - name: Get addon information and update build args
+
+    - name: "Get addon information and update build args"
       id: information
       uses: ./.github/actions/addon-info
-    - name: Test build
+
+    - name: "Test build"
       uses: home-assistant/builder@master
       with:
         args: |
