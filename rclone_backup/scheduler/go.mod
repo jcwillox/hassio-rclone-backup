@@ -3,8 +3,8 @@ module scheduler
 go 1.19
 
 require (
-	github.com/go-co-op/gocron v1.17.0
-	github.com/gosimple/slug v1.12.0
+	github.com/go-co-op/gocron v1.18.0
+	github.com/gosimple/slug v1.13.1
 	github.com/jcwillox/emerald v0.3.3
 	gopkg.in/yaml.v3 v3.0.1
 )
