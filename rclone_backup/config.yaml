@@ -66,6 +66,7 @@ schema:
   log_level: list(debug|info|warning|error|fatal)?
 image: ghcr.io/agodet/hassio-rclone-backup/{arch}
 devices:
-  - "/dev/fuse:/dev/fuse"
+  - /dev/fuse
 privileged:
   - SYS_ADMIN
+apparmor: false
