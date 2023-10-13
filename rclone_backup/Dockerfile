@@ -74,6 +74,7 @@ RUN if [ "${BUILD_ARCH}" = "armhf" ]; then \
     && mkdir -p /root/.config/rclone
 
 RUN apk add fuse
+RUN sed -i 's/#user_allow_other/user_allow_other/' /etc/fuse.conf
 
 # Labels
 LABEL \
