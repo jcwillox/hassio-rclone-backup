@@ -1,6 +1,6 @@
 ---
 name: Rclone Backup
-version: 3.0.24
+version: 3.0.1
 slug: rclone_backup
 description: Automatically sync backup to remote locations using rclone
 arch:
@@ -10,7 +10,7 @@ arch:
   - amd64
   - i386
 init: false
-url: https://github.com/agodet/hassio-rclone-backup
+url: https://github.com/jcwillox/hassio-rclone-backup
 startup: application
 boot: auto
 homeassistant_api: true
@@ -64,7 +64,7 @@ schema:
   no_unrename: bool?
   no_slugify: bool?
   log_level: list(debug|info|warning|error|fatal)?
-image: ghcr.io/agodet/hassio-rclone-backup/{arch}
+image: ghcr.io/jcwillox/hassio-rclone-backup/{arch}
 devices:
   - /dev/fuse
 privileged:
