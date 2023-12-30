@@ -38,6 +38,10 @@ ENV LANG C.UTF-8
 ENV RCLONE_INSTALLED_VERSION 1.65.0
 ENV RCLONE_WEBUI_INSTALLED_VERSION 2.0.5
 
+# Install fuse
+RUN apk add fuse \
+    && sed -i 's/#user_allow_other/user_allow_other/' /etc/fuse.conf
+
 # Copy root filesystem
 COPY rootfs /
 COPY --from=build /app/scheduler.bin /usr/bin/scheduler
