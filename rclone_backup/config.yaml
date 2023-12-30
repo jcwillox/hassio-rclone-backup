@@ -65,3 +65,8 @@ schema:
   no_slugify: bool?
   log_level: list(debug|info|warning|error|fatal)?
 image: ghcr.io/jcwillox/hassio-rclone-backup/{arch}
+devices:
+  - /dev/fuse
+privileged:
+  - SYS_ADMIN
+apparmor: false
