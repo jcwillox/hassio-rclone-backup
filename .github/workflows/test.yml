@@ -20,9 +20,6 @@ jobs:
     - name: "Checkout the repository"
       uses: actions/checkout@v3
 
-    - name: "Setup yq"
-      uses: frenck/action-setup-yq@v1
-
     - name: "Get addon information and update build args"
       id: information
       uses: ./.github/actions/addon-info

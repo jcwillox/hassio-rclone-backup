@@ -17,9 +17,6 @@ jobs:
       with:
         ref: main
 
-    - name: "Setup yq"
-      uses: frenck/action-setup-yq@v1
-
     - name: "Update version and changelog"
       run: |
         yq -i '.version = "${{ github.event.release.tag_name }}"' $TARGET/config.yaml
