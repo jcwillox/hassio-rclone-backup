@@ -19,9 +19,9 @@ panel_icon: mdi:cloud-sync
 map:
   - config:rw
   - backup:rw
-  - share:ro
+  - share:rw
   - ssl:ro
-  - media:ro
+  - media:rw
 options:
   jobs:
     - name: Sync Daily Backups
