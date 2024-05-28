@@ -35,8 +35,10 @@ ARG BUILD_REPOSITORY
 ARG BUILD_SHA
 
 ENV LANG C.UTF-8
-ENV RCLONE_INSTALLED_VERSION 1.65.0
-ENV RCLONE_WEBUI_INSTALLED_VERSION 2.0.5
+# renovate: datasource=github-releases depName=rclone packageName=rclone/rclone
+ENV RCLONE_INSTALLED_VERSION=1.65.0
+# renovate: datasource=github-releases depName=rclone-webui packageName=rclone/rclone-webui-react
+ENV RCLONE_WEBUI_INSTALLED_VERSION=2.0.5
 
 # Install fuse
 RUN apk add fuse \
