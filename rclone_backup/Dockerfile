@@ -1,5 +1,5 @@
 ARG BUILD_FROM
-FROM golang:1.19-alpine as build
+FROM golang:1.22-alpine as build
 
 ARG BUILD_ARCH
 ARG BUILD_FROM
@@ -36,7 +36,7 @@ ARG BUILD_SHA
 
 ENV LANG C.UTF-8
 # renovate: datasource=github-releases depName=rclone packageName=rclone/rclone
-ENV RCLONE_INSTALLED_VERSION=1.65.0
+ENV RCLONE_INSTALLED_VERSION=1.66.0
 # renovate: datasource=github-releases depName=rclone-webui packageName=rclone/rclone-webui-react
 ENV RCLONE_WEBUI_INSTALLED_VERSION=2.0.5
 
