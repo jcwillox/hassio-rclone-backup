@@ -3,13 +3,14 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/gosimple/slug"
 	"github.com/jcwillox/emerald"
 	"gopkg.in/yaml.v3"
 	"os"
+	"os/signal"
 	"strings"
-	"time"
+	"syscall"
 )
 
 const (
@@ -134,14 +135,15 @@ func main() {
 			}
 		}
 	} else {
-		scheduler := gocron.NewScheduler(time.Local)
-
 		// only run 1 job at a time to prevent issues with file locks
-		scheduler.SetMaxConcurrentJobs(1, gocron.WaitMode)
+		scheduler, err := gocron.NewScheduler(gocron.WithLimitConcurrentJobs(1, gocron.LimitModeWait))
+		if err != nil {
+			Fatalln("failed to create scheduler", err)
+		}
 
 		for _, job := range config.Jobs {
 			if job.Schedule != "" {
-				_, err = scheduler.Cron(job.Schedule).Do(CreateJob(job))
+				_, err = scheduler.NewJob(gocron.CronJob(job.Schedule, false), gocron.NewTask(CreateJob(job)))
 				if err != nil {
 					Fatalln("failed to schedule job", "'"+job.Name+"'", err)
 				}
@@ -155,7 +157,22 @@ func main() {
 			}
 		}
 
-		scheduler.StartBlocking()
+		// start the scheduler
+		scheduler.Start()
+
+		// block until interrupted
+		done := make(chan os.Signal, 1)
+		signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
+		<-done
+
+		Infoln("shutting down...")
+
+		// shutdown scheduler
+		err = scheduler.Shutdown()
+		if err != nil {
+			Errorln("failed to shutdown scheduler", err)
+		}
+
 	}
 }
 
