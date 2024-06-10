@@ -1,6 +1,10 @@
 #!/usr/bin/with-contenv bashio
 
-CONFIG_PATH="/config/rclone.conf"
+CONFIG_PATH="/homeassistant/rclone.conf"
+
+# backwards compatible with config directory
+ln -s "/homeassistant" "/config" \
+    || bashio::log.warning "Failed linking common directory: /config"
 
 if bashio::config.has_value "rclone_config"; then
   # write rclone config from addon config

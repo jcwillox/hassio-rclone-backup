@@ -36,7 +36,7 @@ options:
       exclude: []
       flags: {}
   dry_run: true
-  config_path: "/config/rclone.conf"
+  config_path: "/homeassistant/rclone.conf"
 schema:
   jobs:
     - name: str?

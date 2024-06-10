@@ -62,7 +62,7 @@ jobs:
     flags:
       drive-use-trash: false
 dry_run: false
-config_path: /config/rclone.conf
+config_path: /homeassistant/rclone.conf
 ```
 
 ## Providers

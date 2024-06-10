@@ -15,7 +15,7 @@ jobs:
     exclude: []
     flags: {}
 dry_run: false
-config_path: /config/rclone.conf
+config_path: /homeassistant/rclone.conf
 ```
 
 ## Configuration
