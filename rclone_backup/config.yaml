@@ -17,11 +17,13 @@ homeassistant_api: true
 ingress: true
 panel_icon: mdi:cloud-sync
 map:
-  - config:rw
+  - addons:rw
+  - all_addon_configs:rw
   - backup:rw
+  - homeassistant_config:rw
+  - media:rw
   - share:rw
   - ssl:ro
-  - media:rw
 options:
   jobs:
     - name: Sync Daily Backups
