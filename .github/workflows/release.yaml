@@ -1,0 +1,55 @@
+name: "Release"
+
+on:
+  push:
+    branches:
+      - "beta"
+      - "alpha"
+  workflow_dispatch:
+    inputs:
+      draft:
+        type: boolean
+        description: "Draft release"
+        default: false
+      release_type:
+        type: choice
+        description: "Release type"
+        default: "auto"
+        options:
+          - "auto"
+          - "patch"
+          - "minor"
+          - "major"
+
+env:
+  TARGET: "rclone_backup"
+
+jobs:
+  publish:
+    name: "Publish"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: "Checkout the repository"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Setup node"
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: "Release Package 📦"
+        run: corepack enable && pnpm dlx @jcwillox/semantic-release-config
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEMANTIC_RELEASE_GITHUB_DRAFT: ${{ inputs.draft }}
+          SEMANTIC_RELEASE_FORCE_RELEASE: ${{ inputs.release_type }}
+          SEMANTIC_RELEASE_CHANGELOG_FILE: "${{ env.TARGET }}/CHANGELOG.md"
+          SEMANTIC_RELEASE_CMD_GENERATE_NOTES: "yq -i '.version = \"${nextRelease.version}\"' ${{ env.TARGET }}/config.yaml"
+          SEMANTIC_RELEASE_GIT_ASSETS: '["${{ env.TARGET }}/CHANGELOG.md", "${{ env.TARGET }}/config.yaml"]'
+          SEMANTIC_RELEASE_GIT_MESSAGE: "release: ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"

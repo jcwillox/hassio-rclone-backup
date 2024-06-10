@@ -30,10 +30,10 @@ runs:
         repository="$(echo "$raw_image" | cut -f 1 -d '/')"
         image="$(echo "$raw_image" | cut -f 2- -d '/')"
 
-        echo "::set-output name=name::${name}"
-        echo "::set-output name=description::${description}"
-        echo "::set-output name=repository::${repository}"
-        echo "::set-output name=image::${image}"
+        echo "name=${name}" >> $GITHUB_OUTPUT
+        echo "description=${description}" >> $GITHUB_OUTPUT
+        echo "repository=${repository}" >> $GITHUB_OUTPUT
+        echo "image=${image}" >> $GITHUB_OUTPUT
 
         yq -i ".args.BUILD_NAME=\"${name}\"" $TARGET/build.yaml
         yq -i ".args.BUILD_DESCRIPTION=\"${description}\"" $TARGET/build.yaml
