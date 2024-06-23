@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.3.1
+
+### 📦 Build
+
+* **deps:** Update all non-major dependencies ([6779f0b](https://github.com/jcwillox/hassio-rclone-backup/commit/6779f0b48ea4f0ecd61c79c0d631d94662016781))
+* **deps:** Update docker/build-push-action action to v6 ([5b4af5f](https://github.com/jcwillox/hassio-rclone-backup/commit/5b4af5f46333bbb2f3b2ec2665b3c2e06fd9de97))
+
+**Full Changelog**: [`v3.3.0...v3.3.1`](https://github.com/jcwillox/hassio-rclone-backup/compare/v3.3.0...v3.3.1)
+
 ## 3.3.0
 
 ### ✨ Features
