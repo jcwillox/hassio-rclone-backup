@@ -75,10 +75,10 @@ jobs:
           restore-keys: |
             docker-${{ matrix.architecture }}
       - name: "🏗 Set up QEMU"
-        uses: docker/setup-qemu-action@v3.0.0
+        uses: docker/setup-qemu-action@v3.2.0
 
       - name: "🏗 Set up Docker Buildx"
-        uses: docker/setup-buildx-action@v3.3.0
+        uses: docker/setup-buildx-action@v3.6.1
 
       - name: "ℹ️ Compose build flags"
         id: flags
@@ -107,7 +107,7 @@ jobs:
         run: docker pull "${{ steps.flags.outputs.from }}"
 
       - name: "🚀 Build"
-        uses: docker/build-push-action@v6.2.0
+        uses: docker/build-push-action@v6.5.0
         with:
           push: false
           context: ${{ needs.information.outputs.target }}
