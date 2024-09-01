@@ -61,6 +61,14 @@ jobs:
     # we can also disable google drive trash using flags
     flags:
       drive-use-trash: false
+  # In case we also want to prune backups that are older than 14 days
+  - name: Prune Old Backups
+    schedule: 10 5 * * *
+    command: delete
+    sources:
+      - 'hassbackup:'
+    flags:
+      min-age: 14d
 dry_run: false
 config_path: /homeassistant/rclone.conf
 ```
