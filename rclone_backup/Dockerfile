@@ -1,5 +1,5 @@
 ARG BUILD_FROM
-FROM golang:1.22-alpine as build
+FROM golang:1.23-alpine as build
 
 ARG BUILD_ARCH
 ARG BUILD_FROM
