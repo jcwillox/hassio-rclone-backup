@@ -48,7 +48,7 @@ jobs:
       - name: ⤵️ Check out code from GitHub
         uses: actions/checkout@v4
       - name: 🚀 Run Add-on Lint
-        uses: frenck/action-addon-linter@v2.16.0
+        uses: frenck/action-addon-linter@v2.17.1
         with:
           community: false
           path: "./${{ needs.information.outputs.target }}"
@@ -107,7 +107,7 @@ jobs:
         run: docker pull "${{ steps.flags.outputs.from }}"
 
       - name: "🚀 Build"
-        uses: docker/build-push-action@v6.7.0
+        uses: docker/build-push-action@v6.9.0
         with:
           push: false
           context: ${{ needs.information.outputs.target }}
