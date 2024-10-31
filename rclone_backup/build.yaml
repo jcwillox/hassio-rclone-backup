@@ -4,4 +4,4 @@ build_from:
   amd64: ghcr.io/hassio-addons/base-python/amd64:14.0.3
   armhf: ghcr.io/hassio-addons/base-python/armhf:14.0.3
   armv7: ghcr.io/hassio-addons/base-python/armv7:14.0.3
-  i386: ghcr.io/hassio-addons/base-python/i386:14.0.3
+  i386: ghcr.io/hassio-addons/base-python/i386:15.0.1
