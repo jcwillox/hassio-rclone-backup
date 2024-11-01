@@ -17,6 +17,11 @@
       "groupName": "Add-on base image",
       "matchDatasources": ["docker"],
       "matchPackagePrefixes": ["ghcr.io/hassio-addons/base"]
+    },
+    {
+      "groupName": "Add-on base python image",
+      "matchDatasources": ["docker"],
+      "matchPackagePrefixes": ["ghcr.io/hassio-addons/base-python"]
     }
   ]
 }
