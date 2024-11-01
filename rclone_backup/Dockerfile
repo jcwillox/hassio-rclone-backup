@@ -44,7 +44,8 @@ ENV RCLONE_WEBUI_INSTALLED_VERSION=2.0.5
 
 # Install fuse
 RUN apk add fuse \
-    && sed -i 's/#user_allow_other/user_allow_other/' /etc/fuse.conf
+    && sed -i 's/#user_allow_other/user_allow_other/' /etc/fuse.conf \
+    && ln -s /bin/fusermount /bin/fusermount3
 
 # Copy root filesystem
 COPY rootfs /
