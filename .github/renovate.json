@@ -1,27 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>jcwillox/renovate-config", ":automergeMinor"],
-  "customManagers": [
-    {
-      "fileMatch": ["(^|/)build\\.yaml$"],
-      "matchStringsStrategy": "any",
-      "matchStrings": [
-        "ARG BUILD_FROM=(?<depName>.*?):(?<currentValue>.*?)\\s+",
-        "(aarch64|amd64|armhf|armv7|i386):\\s[\"']?(?<depName>.*?):(?<currentValue>.*?)[\"']?\\s"
-      ],
-      "datasourceTemplate": "docker"
-    }
-  ],
-  "packageRules": [
-    {
-      "groupName": "Add-on base image",
-      "matchDatasources": ["docker"],
-      "matchPackagePrefixes": ["ghcr.io/hassio-addons/base"]
-    },
-    {
-      "groupName": "Add-on base python image",
-      "matchDatasources": ["docker"],
-      "matchPackagePrefixes": ["ghcr.io/hassio-addons/base-python"]
-    }
+  "extends": [
+    "github>jcwillox/renovate-config",
+    "github>jcwillox/renovate-config:hassio-addon",
+    ":automergeMinor"
   ]
 }
