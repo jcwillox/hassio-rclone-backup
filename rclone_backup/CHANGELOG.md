@@ -1,5 +1,26 @@
 # Changelog
 
+## 3.3.3
+
+### 🐛 Bug Fixes
+
+* Error when mounting fuse fs ([#88](https://github.com/jcwillox/hassio-rclone-backup/issues/88)) ([66d8601](https://github.com/jcwillox/hassio-rclone-backup/commit/66d8601ce0d0f35d81ab6a7651f46c8a56008ddb))
+
+
+### 📦 Build
+
+* **deps:** Update add-on base python image to v15 ([1ab5981](https://github.com/jcwillox/hassio-rclone-backup/commit/1ab5981546e7e28454ff0993808bcb08fd558454))
+* **deps:** Update all non-major dependencies ([62352d0](https://github.com/jcwillox/hassio-rclone-backup/commit/62352d0d6d811c9b525316cb700a9e6970f8e4de))
+* **deps:** Update all non-major dependencies ([#98](https://github.com/jcwillox/hassio-rclone-backup/issues/98)) ([f7cdd0b](https://github.com/jcwillox/hassio-rclone-backup/commit/f7cdd0b3d1467d3a54f9f8cd5cb827e609b4e4bb))
+
+
+### ⚙️ Continuous Integration
+
+* Update renovate config ([7c05749](https://github.com/jcwillox/hassio-rclone-backup/commit/7c05749f2b4c58307a4f27fcf921407783232abf))
+* Update renovate config ([d411024](https://github.com/jcwillox/hassio-rclone-backup/commit/d4110246915c4b91e1a4a86b8f2602490b71e83c))
+
+**Full Changelog**: [`v3.3.2...v3.3.3`](https://github.com/jcwillox/hassio-rclone-backup/compare/v3.3.2...v3.3.3)
+
 ## 3.3.2
 
 ### 📚 Documentation
