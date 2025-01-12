@@ -3,8 +3,8 @@ module scheduler
 go 1.22
 
 require (
-	github.com/go-co-op/gocron/v2 v2.12.4
-	github.com/gosimple/slug v1.14.0
+	github.com/go-co-op/gocron/v2 v2.14.2
+	github.com/gosimple/slug v1.15.0
 	github.com/jcwillox/emerald v0.3.3
 	gopkg.in/yaml.v3 v3.0.1
 )
