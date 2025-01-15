@@ -1,5 +1,5 @@
 ARG BUILD_FROM
-FROM golang:1.23-alpine as build
+FROM golang:1.23-alpine AS build
 
 ARG BUILD_ARCH
 ARG BUILD_FROM
@@ -36,7 +36,7 @@ ARG BUILD_REF
 ARG BUILD_REPOSITORY
 ARG BUILD_VERSION
 
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 # renovate: datasource=github-releases depName=rclone packageName=rclone/rclone
 ENV RCLONE_INSTALLED_VERSION=1.69.0
 # renovate: datasource=github-releases depName=rclone-webui packageName=rclone/rclone-webui-react
@@ -49,7 +49,6 @@ RUN apk add fuse \
 
 # Copy root filesystem
 COPY rootfs /
-COPY --from=build /app/scheduler.bin /usr/bin/scheduler
 
 # Download Web GUI
 RUN curl -LJo /tmp/currentbuild.zip https://github.com/rclone/rclone-webui-react/releases/download/v"${RCLONE_WEBUI_INSTALLED_VERSION}"/currentbuild.zip \
@@ -81,6 +80,9 @@ RUN if [ "${BUILD_ARCH}" = "armhf" ]; then \
     && chmod 755 /usr/bin/rclone \
     && rm -rf /tmp/rclone* \
     && mkdir -p /root/.config/rclone
+
+# add scheduler binary
+COPY --from=build /app/scheduler.bin /usr/bin/scheduler
 
 # Labels
 LABEL \
