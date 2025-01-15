@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.3.4
+
+### 🏗️ Chore
+
+* Fix some dockerfile warnings ([ab65571](https://github.com/jcwillox/hassio-rclone-backup/commit/ab655714260a73830df7be4c3753e54bc97fd6f2))
+
+
+### 📦 Build
+
+* **deps:** Update add-on base python image to v16 (major) ([#100](https://github.com/jcwillox/hassio-rclone-backup/issues/100)) ([71146dd](https://github.com/jcwillox/hassio-rclone-backup/commit/71146ddb0c4dc6940fe2f4753de34ab6aec3382d))
+* **deps:** Update all non-major dependencies ([#99](https://github.com/jcwillox/hassio-rclone-backup/issues/99)) ([2cd82b9](https://github.com/jcwillox/hassio-rclone-backup/commit/2cd82b9cd9f02b0629b59a57e2c46db538c055b7))
+
+**Full Changelog**: [`v3.3.3...v3.3.4`](https://github.com/jcwillox/hassio-rclone-backup/compare/v3.3.3...v3.3.4)
+
 ## 3.3.3
 
 ### 🐛 Bug Fixes
