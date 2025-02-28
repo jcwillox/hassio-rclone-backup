@@ -3,7 +3,7 @@ module scheduler
 go 1.22
 
 require (
-	github.com/go-co-op/gocron/v2 v2.14.2
+	github.com/go-co-op/gocron/v2 v2.16.0
 	github.com/gosimple/slug v1.15.0
 	github.com/jcwillox/emerald v0.3.3
 	gopkg.in/yaml.v3 v3.0.1
@@ -12,7 +12,7 @@ require (
 require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
-	github.com/jonboulle/clockwork v0.4.0 // indirect
+	github.com/jonboulle/clockwork v0.5.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
