@@ -38,7 +38,7 @@ ARG BUILD_VERSION
 
 ENV LANG=C.UTF-8
 # renovate: datasource=github-releases depName=rclone packageName=rclone/rclone
-ENV RCLONE_INSTALLED_VERSION=1.69.1
+ENV RCLONE_INSTALLED_VERSION=1.69.3
 # renovate: datasource=github-releases depName=rclone-webui packageName=rclone/rclone-webui-react
 ENV RCLONE_WEBUI_INSTALLED_VERSION=2.0.5
 
