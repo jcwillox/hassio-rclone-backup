@@ -129,7 +129,7 @@ Optionally you can provide a friendly name for the job, this can be useful to id
 
 **Option:** `schedule`
 
-Specify when the rclone backup should run using cron syntax. If the `schedule` option is empty or undefined the job will be run when the addon starts.
+Specify when the rclone backup should run using cron syntax. If the `schedule` option is empty or undefined the job will be run when the addon starts. If the job should be executed every minute (`* * * * *`), then the cron syntax may need to be enclosed in quotation marks, e. g. `schedule: "* * * * *"`.
 
 **Option:** `command`
 
