@@ -28,7 +28,7 @@ jobs:
       target: ${{ steps.information.outputs.target }}
     steps:
       - name: "⤵️ Check out code from GitHub"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: "🚀 Run add-on information action"
         id: information
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⤵️ Check out code from GitHub
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: 🚀 Run Add-on Lint
         uses: frenck/action-addon-linter@v2.18.0
         with:
@@ -64,7 +64,7 @@ jobs:
         architecture: ${{ fromJson(needs.information.outputs.architectures) }}
     steps:
       - name: "⤵️ Check out code from GitHub"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: "🏗 Set up build cache"
         id: cache
