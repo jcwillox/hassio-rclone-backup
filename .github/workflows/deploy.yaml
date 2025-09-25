@@ -24,7 +24,7 @@ jobs:
       version: ${{ steps.release.outputs.version }}
     steps:
       - name: "Checkout the repository"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -54,7 +54,7 @@ jobs:
           architecture: ${{ fromJson(needs.information.outputs.architectures) }}
       steps:
         - name: "Checkout the repository"
-          uses: actions/checkout@v4
+          uses: actions/checkout@v5
 
         - name: "🏗 Set up build cache"
           id: cache
