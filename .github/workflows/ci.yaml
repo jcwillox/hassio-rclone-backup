@@ -48,7 +48,7 @@ jobs:
       - name: ⤵️ Check out code from GitHub
         uses: actions/checkout@v5
       - name: 🚀 Run Add-on Lint
-        uses: frenck/action-addon-linter@v2.18.0
+        uses: frenck/action-addon-linter@v2.21.0
         with:
           community: false
           path: "./${{ needs.information.outputs.target }}"
@@ -75,7 +75,7 @@ jobs:
           restore-keys: |
             docker-${{ matrix.architecture }}
       - name: "🏗 Set up QEMU"
-        uses: docker/setup-qemu-action@v3.6.0
+        uses: docker/setup-qemu-action@v3.7.0
 
       - name: "🏗 Set up Docker Buildx"
         uses: docker/setup-buildx-action@v3.11.1
