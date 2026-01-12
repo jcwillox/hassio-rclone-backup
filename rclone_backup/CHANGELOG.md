@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.3.5
+
+### 📦 Build
+
+* **deps:** Update actions/checkout action to v5 ([#114](https://github.com/jcwillox/hassio-rclone-backup/issues/114)) ([586af1e](https://github.com/jcwillox/hassio-rclone-backup/commit/586af1e6eae4ce36fb5781bd3adc08639f78709a))
+* **deps:** Update actions/checkout action to v6 ([#122](https://github.com/jcwillox/hassio-rclone-backup/issues/122)) ([53f6b64](https://github.com/jcwillox/hassio-rclone-backup/commit/53f6b64e1cab4d4355b483f36a6e027cb9a09bac))
+* **deps:** Update actions/setup-node action to v5 ([#118](https://github.com/jcwillox/hassio-rclone-backup/issues/118)) ([55f5400](https://github.com/jcwillox/hassio-rclone-backup/commit/55f54007738acb27c5730dd69ace4da8f1f8c798))
+* **deps:** Update actions/setup-node action to v6 ([#120](https://github.com/jcwillox/hassio-rclone-backup/issues/120)) ([dd6a40a](https://github.com/jcwillox/hassio-rclone-backup/commit/dd6a40aa9b0d353b55bcb895bd840a7d79421bb6))
+* **deps:** Update all non-major dependencies ([#108](https://github.com/jcwillox/hassio-rclone-backup/issues/108)) ([8456008](https://github.com/jcwillox/hassio-rclone-backup/commit/84560089561dba2e0caac402cb855b90c997fa95))
+* **deps:** Update all non-major dependencies ([#109](https://github.com/jcwillox/hassio-rclone-backup/issues/109)) ([653588f](https://github.com/jcwillox/hassio-rclone-backup/commit/653588fd209463718916d7214624a1929d0086f6))
+* **deps:** Update all non-major dependencies ([#113](https://github.com/jcwillox/hassio-rclone-backup/issues/113)) ([c686e65](https://github.com/jcwillox/hassio-rclone-backup/commit/c686e65c8cddd0126e0bbafa2f2d2af8d73e4c2f))
+* **deps:** Update all non-major dependencies ([#117](https://github.com/jcwillox/hassio-rclone-backup/issues/117)) ([00358b8](https://github.com/jcwillox/hassio-rclone-backup/commit/00358b8d3e41ef95d9c20fd9860d8636cd01000f))
+* **deps:** Update all non-major dependencies ([#119](https://github.com/jcwillox/hassio-rclone-backup/issues/119)) ([20ebe23](https://github.com/jcwillox/hassio-rclone-backup/commit/20ebe2396d4d1ebbe7a920e52b71b738974b4a65))
+* **deps:** Update all non-major dependencies ([#121](https://github.com/jcwillox/hassio-rclone-backup/issues/121)) ([327db82](https://github.com/jcwillox/hassio-rclone-backup/commit/327db821bce4f8f165f9ec404c5554e628a8d0c9))
+* **deps:** Update all non-major dependencies ([#123](https://github.com/jcwillox/hassio-rclone-backup/issues/123)) ([598f6e9](https://github.com/jcwillox/hassio-rclone-backup/commit/598f6e9c912c2fe72001171c8e6d47926683c609))
+
+**Full Changelog**: [`v3.3.4...v3.3.5`](https://github.com/jcwillox/hassio-rclone-backup/compare/v3.3.4...v3.3.5)
+
 ## 3.3.4
 
 ### 🏗️ Chore
