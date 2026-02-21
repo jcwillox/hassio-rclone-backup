@@ -16,6 +16,7 @@ ingress: true
 panel_icon: mdi:cloud-sync
 map:
   - addons:rw
+  - addon_config:rw
   - all_addon_configs:rw
   - backup:rw
   - homeassistant_config:rw
