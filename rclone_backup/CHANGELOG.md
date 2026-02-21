@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.3.6
+
+### 📦 Build
+
+* **deps:** Update all non-major dependencies ([#132](https://github.com/jcwillox/hassio-rclone-backup/issues/132)) ([f45b729](https://github.com/jcwillox/hassio-rclone-backup/commit/f45b72947ba083d2b4971c9eccbf67a9e9da3198))
+
+**Full Changelog**: [`v3.3.5...v3.3.6`](https://github.com/jcwillox/hassio-rclone-backup/compare/v3.3.5...v3.3.6)
+
 ## 3.3.5
 
 ### 📦 Build
