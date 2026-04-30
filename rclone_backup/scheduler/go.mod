@@ -2,10 +2,10 @@ module scheduler
 
 go 1.24.0
 
-toolchain go1.26.1
+toolchain go1.26.2
 
 require (
-	github.com/go-co-op/gocron/v2 v2.19.1
+	github.com/go-co-op/gocron/v2 v2.21.1
 	github.com/gosimple/slug v1.15.0
 	github.com/jcwillox/emerald v0.3.3
 	gopkg.in/yaml.v3 v3.0.1
