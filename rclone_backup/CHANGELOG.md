@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.4.0
+
+### ✨ Features
+
+* Add addon_config to rclone_backup config ([#130](https://github.com/jcwillox/hassio-rclone-backup/issues/130)) ([7016652](https://github.com/jcwillox/hassio-rclone-backup/commit/7016652292ab0c7b85ba99a05ace62153cf2d8ae))
+
+
+### 📦 Build
+
+* **deps:** Update all non-major dependencies ([#136](https://github.com/jcwillox/hassio-rclone-backup/issues/136)) ([59dd247](https://github.com/jcwillox/hassio-rclone-backup/commit/59dd247df3d72a1d1fde573d61ccea0215823f3d))
+* **deps:** Update all non-major dependencies ([#141](https://github.com/jcwillox/hassio-rclone-backup/issues/141)) ([cbf1c14](https://github.com/jcwillox/hassio-rclone-backup/commit/cbf1c14a86ab88c920a5d68de1022ba53a0b08dc))
+* **deps:** Update all non-major dependencies ([#144](https://github.com/jcwillox/hassio-rclone-backup/issues/144)) ([dcae97d](https://github.com/jcwillox/hassio-rclone-backup/commit/dcae97d139efd2477adcdbee133998a36c90ed95))
+
+**Full Changelog**: [`v3.3.6...v3.4.0`](https://github.com/jcwillox/hassio-rclone-backup/compare/v3.3.6...v3.4.0)
+
 ## 3.3.6
 
 ### 📦 Build
