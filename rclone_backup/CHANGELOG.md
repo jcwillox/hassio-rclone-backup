@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.4.1
+
+### 📦 Build
+
+* **deps:** Update actions/cache action to v5 ([#124](https://github.com/jcwillox/hassio-rclone-backup/issues/124)) ([ef8585d](https://github.com/jcwillox/hassio-rclone-backup/commit/ef8585d96eaf03b37b19d45108b01e54f41ce26e))
+* **deps:** Update docker/build-push-action action to v7 ([#137](https://github.com/jcwillox/hassio-rclone-backup/issues/137)) ([c7bd037](https://github.com/jcwillox/hassio-rclone-backup/commit/c7bd037f2eb7ce6b51d74377a7586b9267f9a49f))
+* **deps:** Update docker/login-action action to v4 ([#138](https://github.com/jcwillox/hassio-rclone-backup/issues/138)) ([bbabe66](https://github.com/jcwillox/hassio-rclone-backup/commit/bbabe664283212a8a5fab03e82aec4f4c8a63c1f))
+* **deps:** Update docker/setup-buildx-action action to v4 ([#139](https://github.com/jcwillox/hassio-rclone-backup/issues/139)) ([e731bac](https://github.com/jcwillox/hassio-rclone-backup/commit/e731bac173a99dc61e5fa35399ea7dc3a2254860))
+* **deps:** Update docker/setup-qemu-action action to v4 ([#140](https://github.com/jcwillox/hassio-rclone-backup/issues/140)) ([618122b](https://github.com/jcwillox/hassio-rclone-backup/commit/618122b0d3e503164bac6f653bd9d28d3ab6d6e0))
+
+**Full Changelog**: [`v3.4.0...v3.4.1`](https://github.com/jcwillox/hassio-rclone-backup/compare/v3.4.0...v3.4.1)
+
 ## 3.4.0
 
 ### ✨ Features
