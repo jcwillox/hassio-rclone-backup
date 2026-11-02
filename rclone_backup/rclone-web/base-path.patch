@@ -1,0 +1,233 @@
+diff --git a/src/App.tsx b/src/App.tsx
+index c3a1d2f..5e409c5 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -6,6 +6,7 @@ import { toast } from 'sonner'
+ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+ import { Separator } from '@/components/ui/separator'
+ import { Switch } from '@/components/ui/switch'
++import { appPath } from '@/lib/base'
+ import { LANGUAGES, type Language, type TranslationKey, useT } from '@/lib/i18n'
+ import { clearAuthSession, useStore } from '@/lib/store'
+ import { cn } from '@/lib/ui'
+@@ -93,7 +94,9 @@ export function App() {
+         longPressFiredRef.current = false
+         longPressTimerRef.current = window.setTimeout(() => {
+             longPressFiredRef.current = true
+-            const el = document.querySelector<HTMLImageElement>('header img[src="/icon.svg"]')
++            const el = document.querySelector<HTMLImageElement>(
++                `header img[src="${appPath('icon.svg')}"]`
++            )
+             if (el) {
+                 el.style.transition = 'transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)'
+                 el.style.transform = 'rotate(360deg)'
+@@ -134,7 +137,7 @@ export function App() {
+                     <img
+                         alt=""
+                         className="size-6 select-none"
+-                        src="/icon.svg"
++                        src={appPath('icon.svg')}
+                         draggable={false}
+                         onPointerDown={startLongPress}
+                         onPointerUp={cancelLongPress}
+diff --git a/src/lib/base.ts b/src/lib/base.ts
+new file mode 100644
+index 0000000..4a52de7
+--- /dev/null
++++ b/src/lib/base.ts
+@@ -0,0 +1,17 @@
++// The path the app is served from, ending in '/'. In a build this is derived from the bundle's own
++// URL (<base>/assets/index-*.js), so the app works at the root and under a reverse-proxy sub-path,
++// such as Home Assistant ingress, without a build-time setting.
++export const BASE_PATH = import.meta.env.DEV
++    ? '/'
++    : new URL(/* @vite-ignore */ '..', import.meta.url).pathname
++
++export const ROUTER_BASENAME = BASE_PATH.replace(/\/+$/, '') || '/'
++
++// Default rc URL when none is stored: the rcd instance that served the app (rclone rcd --rc-files).
++export const SAME_ORIGIN_URL = import.meta.env.DEV
++    ? ''
++    : new URL(BASE_PATH, window.location.origin).href.replace(/\/+$/, '')
++
++export function appPath(path: string) {
++    return `${BASE_PATH}${path.replace(/^\/+/, '')}`
++}
+diff --git a/src/lib/store.ts b/src/lib/store.ts
+index 1985215..19be91c 100644
+--- a/src/lib/store.ts
++++ b/src/lib/store.ts
+@@ -1,5 +1,6 @@
+ import { create } from 'zustand'
+ import { createJSONStorage, persist } from 'zustand/middleware'
++import { SAME_ORIGIN_URL } from '@/lib/base'
+ import type { Language } from '@/lib/i18n'
+ import { clearPersistedQueryCache } from '@/lib/query'
+ 
+@@ -15,13 +16,14 @@ type Store = {
+ 
+ type PersistedStore = Pick<
+     Store,
+-    'url' | 'user' | 'pass' | 'bannerDismissed' | 'language' | 'checkRemoteUsage'
+->
++    'user' | 'pass' | 'bannerDismissed' | 'language' | 'checkRemoteUsage'
++> &
++    Partial<Pick<Store, 'url'>>
+ 
+ export const useStore = create<Store>()(
+     persist(
+         (): Store => ({
+-            url: '',
++            url: SAME_ORIGIN_URL,
+             user: '',
+             pass: '',
+             bannerDismissed: false,
+@@ -40,7 +42,8 @@ export const useStore = create<Store>()(
+                 language,
+                 checkRemoteUsage,
+             }): PersistedStore => ({
+-                url,
++                // The same-origin default is derived on every load, so a moved sub-path is never stale
++                ...(url === SAME_ORIGIN_URL ? {} : { url }),
+                 user,
+                 pass,
+                 bannerDismissed,
+diff --git a/src/pages/Login.tsx b/src/pages/Login.tsx
+index 41ec8c6..342ecc0 100644
+--- a/src/pages/Login.tsx
++++ b/src/pages/Login.tsx
+@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
+ import { Button } from '@/components/ui/button'
+ import { Card, CardContent, CardHeader } from '@/components/ui/card'
+ import { Input } from '@/components/ui/input'
++import { appPath } from '@/lib/base'
+ import { useT } from '@/lib/i18n'
+ import { clearPersistedQueryCache } from '@/lib/query'
+ import { useStore } from '@/lib/store'
+@@ -174,7 +175,7 @@ export function LoginPage() {
+             {/* DVD bounce */}
+             <div className="pointer-events-none absolute inset-0 animate-[dvd-x_13s_linear_infinite]">
+                 <div className="animate-[dvd-y_9s_linear_infinite]">
+-                    <img alt="" className="h-14 w-auto" src="/icon.svg" />
++                    <img alt="" className="h-14 w-auto" src={appPath('icon.svg')} />
+                 </div>
+             </div>
+ 
+diff --git a/src/rclone/client.ts b/src/rclone/client.ts
+index 9266c33..155371f 100644
+--- a/src/rclone/client.ts
++++ b/src/rclone/client.ts
+@@ -8,6 +8,7 @@ import createRCDClient, {
+     type OpenApiRequiredKeysOf,
+     type RCDClient,
+ } from 'rclone-sdk'
++import { appPath } from '@/lib/base'
+ import { clearAuthSession, useStore } from '@/lib/store'
+ 
+ type InitParam<Init> =
+@@ -48,7 +49,7 @@ function redirectToLogin() {
+     isRedirectingToLogin = true
+     clearAuthSession()
+ 
+-    if (window.location.pathname === '/login') {
++    if (window.location.pathname === appPath('login')) {
+         const searchParams = new URLSearchParams(window.location.search)
+         searchParams.set('reason', 'auth')
+         const search = searchParams.toString()
+@@ -60,7 +61,7 @@ function redirectToLogin() {
+         return
+     }
+ 
+-    window.location.replace('/login?reason=auth')
++    window.location.replace(appPath('login?reason=auth'))
+ }
+ 
+ function resolveAuth({ url, user, pass }: { url: string; user: string; pass: string }) {
+diff --git a/src/router.tsx b/src/router.tsx
+index e985cea..758d207 100644
+--- a/src/router.tsx
++++ b/src/router.tsx
+@@ -1,5 +1,6 @@
+ import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+ import { Spinner } from '@/components/ui/spinner'
++import { ROUTER_BASENAME } from '@/lib/base'
+ import { useStore } from '@/lib/store'
+ import { DashboardPage } from '@/pages/Dashboard'
+ import { LoginPage } from '@/pages/Login'
+@@ -48,32 +49,35 @@ function LoginGate() {
+     return <LoginPage />
+ }
+ 
+-export const router = createBrowserRouter([
+-    {
+-        path: '/login',
+-        element: <LoginGate />,
+-    },
+-    {
+-        element: <AuthGate />,
+-        children: [
+-            {
+-                path: '/',
+-                element: <App />,
+-                children: [
+-                    { index: true, element: <DashboardPage /> },
+-                    { path: 'remotes', element: <RemotesPage /> },
+-                    { path: 'remotes/new', element: <RemotesNewPage /> },
+-                    { path: 'remotes/:remoteName', element: <RemotesDetailsPage /> },
+-                    { path: 'local', element: <RemotesDetailsPage /> },
+-                    { path: 'remotes/:remoteName/edit', element: <RemotesEditPage /> },
+-                    { path: 'mounts', element: <MountsPage /> },
+-                    { path: 'mounts/new', element: <MountsNewPage /> },
+-                    { path: 'serves', element: <ServesPage /> },
+-                    { path: 'serves/new', element: <ServesNewPage /> },
+-                    { path: 'transfers', element: <TransfersPage /> },
+-                    { path: 'settings', element: <SettingsPage /> },
+-                ],
+-            },
+-        ],
+-    },
+-])
++export const router = createBrowserRouter(
++    [
++        {
++            path: '/login',
++            element: <LoginGate />,
++        },
++        {
++            element: <AuthGate />,
++            children: [
++                {
++                    path: '/',
++                    element: <App />,
++                    children: [
++                        { index: true, element: <DashboardPage /> },
++                        { path: 'remotes', element: <RemotesPage /> },
++                        { path: 'remotes/new', element: <RemotesNewPage /> },
++                        { path: 'remotes/:remoteName', element: <RemotesDetailsPage /> },
++                        { path: 'local', element: <RemotesDetailsPage /> },
++                        { path: 'remotes/:remoteName/edit', element: <RemotesEditPage /> },
++                        { path: 'mounts', element: <MountsPage /> },
++                        { path: 'mounts/new', element: <MountsNewPage /> },
++                        { path: 'serves', element: <ServesPage /> },
++                        { path: 'serves/new', element: <ServesNewPage /> },
++                        { path: 'transfers', element: <TransfersPage /> },
++                        { path: 'settings', element: <SettingsPage /> },
++                    ],
++                },
++            ],
++        },
++    ],
++    { basename: ROUTER_BASENAME }
++)
+diff --git a/vite.config.ts b/vite.config.ts
+index 9348cd8..8bb041d 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -65,6 +65,7 @@ function devRclone(): import('vite').Plugin {
+ 
+ // https://vite.dev/config/
+ export default defineConfig({
++    base: './',
+     plugins: [react(), tailwindcss(), devRclone()],
+     define: {
+         APP_VERSION: JSON.stringify(pkg.version),

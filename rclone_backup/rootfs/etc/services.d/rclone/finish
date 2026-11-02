@@ -6,7 +6,8 @@
 
 declare APP_EXIT_CODE=${1}
 
-if [[ "${APP_EXIT_CODE}" -ne 0 ]] && [[ "${APP_EXIT_CODE}" -ne 256 ]]; then
+# 143 is SIGTERM, which s6 sends on every stop or restart: not a crash
+if [[ "${APP_EXIT_CODE}" -ne 0 ]] && [[ "${APP_EXIT_CODE}" -ne 143 ]] && [[ "${APP_EXIT_CODE}" -ne 256 ]]; then
   bashio::log.warning "Rclone Web GUI crashed, halting add-on (code: ${APP_EXIT_CODE})"
   echo "${APP_EXIT_CODE}" > /run/s6-linux-init-container-results/exitcode
   exec /run/s6/basedir/bin/halt
