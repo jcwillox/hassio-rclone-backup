@@ -1,0 +1,9 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Start the ingress proxy in front of the Rclone Web GUI
+# s6-overlay docs: https://github.com/just-containers/s6-overlay
+# ==============================================================================
+
+bashio::log.info "Starting ingress proxy..."
+
+exec nginx -g "daemon off;"

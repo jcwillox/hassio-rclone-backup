@@ -1,0 +1,113 @@
+#include <tunables/global>
+
+# Based on the S6 overlay example in the Home Assistant app security guide.
+profile rclone_backup flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+
+  # Capabilities
+  file,
+  network,
+  # S6 overlay, Docker and the scheduler stop processes, so signals must be received as well as sent
+  signal,
+  capability chown,
+  capability dac_override,
+  capability dac_read_search,
+  capability fowner,
+  capability fsetid,
+  capability kill,
+  capability setgid,
+  capability setuid,
+
+  # S6 overlay
+  /init ix,
+  /bin/** ix,
+  /usr/bin/** ix,
+  /usr/sbin/** ix,
+  /run/{s6,s6-rc*,service}/** ix,
+  /package/** ix,
+  /command/** ix,
+  /etc/services.d/** rwix,
+  /etc/cont-init.d/** rwix,
+  /etc/cont-finish.d/** rwix,
+  /etc/s6-overlay/** rwix,
+  /run/{,**} rwk,
+  /dev/tty rw,
+
+  # Bashio
+  /usr/lib/bashio/** ix,
+  /tmp/** rwk,
+
+  # Options and other files of the app
+  /data/** rw,
+
+  # rclone (Web GUI server and every scheduled job) runs in its own, stricter profile
+  /usr/bin/rclone cx -> rclone,
+
+  profile rclone flags=(attach_disconnected,mediate_deleted) {
+    #include <abstractions/base>
+    #include <abstractions/nameservice>
+    #include <abstractions/ssl_certs>
+
+    # Receive signals from S6 overlay and the scheduler, and signal its own children
+    signal (receive) peer=*_rclone_backup,
+    signal (send, receive) peer=@{profile_name},
+
+    # Cloud providers, and the remote-control API on loopback
+    network inet stream,
+    network inet6 stream,
+    network inet dgram,
+    network inet6 dgram,
+    network netlink raw,
+    network unix stream,
+    network unix dgram,
+
+    # core/command runs rclone itself, nothing else
+    /usr/bin/rclone rix,
+
+    # Jobs read files that other apps own, and keep times and owners when they copy
+    capability chown,
+    capability dac_override,
+    capability dac_read_search,
+    capability fowner,
+    capability fsetid,
+
+    # The names in / (for the Web GUI explorer), not what is below them
+    / r,
+
+    # The folders Home Assistant maps into the app (ssl is read-only)
+    /homeassistant/{,**} rwk,
+    /backup/{,**} rwk,
+    /share/{,**} rwk,
+    /media/{,**} rwk,
+    /addons/{,**} rwk,
+    /addon_configs/{,**} rwk,
+    /config/{,**} rwk,
+    /ssl/{,**} r,
+    /data/{,**} r,
+
+    # Its own files: config written from the app options, caches, the Web GUI
+    /root/.config/rclone/{,**} rwk,
+    /root/.cache/rclone/{,**} rwk,
+    /tmp/{,**} rwk,
+    /usr/share/rclone-web/{,**} r,
+    /usr/share/zoneinfo/{,**} r,
+    /etc/mime.types r,
+
+    # Go runtime: process, CPU, memory and cgroup information
+    @{PROC}/@{pid}/{,**} r,
+    @{PROC}/sys/{,**} r,
+    @{PROC}/{meminfo,cpuinfo,stat} r,
+    /sys/fs/cgroup/{,**} r,
+    /sys/devices/system/cpu/{,**} r,
+    /sys/kernel/mm/transparent_hugepage/{,**} r,
+
+    # FUSE mounts (rclone mount)
+    capability sys_admin,
+    /dev/fuse rw,
+    /etc/fuse.conf r,
+    /bin/fusermount rix,
+    mount fstype=fuse.rclone -> /**,
+    mount fstype=fuse -> /**,
+    umount /**,
+  }
+}
