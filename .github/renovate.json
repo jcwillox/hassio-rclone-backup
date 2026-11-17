@@ -4,5 +4,13 @@
     "github>jcwillox/renovate-config",
     "github>jcwillox/renovate-config:hassio-addon",
     ":automergeMinor"
+  ],
+  "packageRules": [
+    {
+      "description": "rclone-web is built with a local patch (rclone-web/base-path.patch), check ingress before merging",
+      "matchDepNames": ["rclone-web"],
+      "groupName": "rclone-web",
+      "automerge": false
+    }
   ]
 }

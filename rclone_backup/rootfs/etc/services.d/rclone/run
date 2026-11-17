@@ -6,6 +6,7 @@
 
 bashio::log.info "Starting Rclone Web GUI..."
 
+# Loopback only: nginx on the ingress port admits the Supervisor and proxies here
 exec rclone rcd --rc-no-auth --rc-web-gui-no-open-browser \
-  --rc-addr ":8099" --rc-allow-origin "172.30.32.2" \
-  --rc-files "/usr/share/rclone-webui-react"
+  --rc-addr "127.0.0.1:5572" \
+  --rc-files "/usr/share/rclone-web"

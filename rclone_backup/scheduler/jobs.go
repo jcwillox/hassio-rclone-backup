@@ -12,49 +12,39 @@ import (
 // CreateJob create run job closure with the job config
 func CreateJob(job JobConfig) func() {
 	return func() {
-		if len(job.Sources) > 1 && len(job.Destinations) > 1 {
-			// multiple destinations and multiple sources
-			for _, destination := range job.Destinations {
-				for _, source := range job.Sources {
-					RunJob(job, source, destination+source)
-				}
-			}
-		} else if len(job.Sources) > 1 {
-			// multiple sources
-			// multiple sources to single destination
-			if len(job.Destinations) > 0 {
-				job.Destination = job.Destinations[0]
-			}
-			for _, source := range job.Sources {
-				RunJob(job, source, job.Destination+source)
-			}
-			return
-		} else if len(job.Destinations) > 1 {
-			// multiple destinations
-			// multiple destinations to single source
-			if len(job.Sources) > 0 {
-				job.Source = job.Sources[0]
-			}
-			for _, destination := range job.Destinations {
-				RunJob(job, job.Source, destination)
-			}
-		} else {
-			// single source
-			// single destination
-			// single source to single destination
-			if len(job.Destinations) > 0 {
-				job.Destination = job.Destinations[0]
-			}
-			if len(job.Sources) > 0 {
-				job.Source = job.Sources[0]
-			}
-			RunJob(job, job.Source, job.Destination)
+		for _, run := range JobRuns(job) {
+			RunJob(job, run[0], run[1])
 		}
 	}
 }
 
-func RunJob(job JobConfig, source string, destination string) {
-	// generate rclone command
+// JobRuns the source and destination of each rclone run in a job, the destination is empty when
+// the job has none (delete)
+func JobRuns(job JobConfig) [][2]string {
+	var runs [][2]string
+	if len(job.Destinations) == 0 {
+		// no destination, each source on its own
+		for _, source := range job.Sources {
+			runs = append(runs, [2]string{source, ""})
+		}
+	} else if len(job.Sources) > 1 {
+		// multiple sources, each under destination/source
+		for _, destination := range job.Destinations {
+			for _, source := range job.Sources {
+				runs = append(runs, [2]string{source, destination + source})
+			}
+		}
+	} else {
+		// single source to each destination
+		for _, destination := range job.Destinations {
+			runs = append(runs, [2]string{job.Sources[0], destination})
+		}
+	}
+	return runs
+}
+
+// BuildArgs generate the rclone command arguments for a job
+func BuildArgs(job JobConfig, source string, destination string) []string {
 	args := []string{job.Command, source}
 
 	// destination is not required
@@ -81,6 +71,12 @@ func RunJob(job JobConfig, source string, destination string) {
 	args = append(args, config.ExtraFlags...)
 	args = append(args, FlagMapToList(job.Flags)...)
 	args = append(args, job.ExtraFlags...)
+	return args
+}
+
+func RunJob(job JobConfig, source string, destination string) {
+	// generate rclone command
+	args := BuildArgs(job, source, destination)
 
 	Infoln("running", JobInfo(job, "job", source, destination))
 	Debugln("rclone", args)

@@ -48,10 +48,21 @@ jobs:
       - name: ⤵️ Check out code from GitHub
         uses: actions/checkout@v6
       - name: 🚀 Run Add-on Lint
-        uses: frenck/action-addon-linter@v2.21.0
+        uses: frenck/action-addon-linter@v2.21.1
         with:
           community: false
           path: "./${{ needs.information.outputs.target }}"
+
+  ingress-rig:
+    name: "Ingress rig"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "⤵️ Check out code from GitHub"
+        uses: actions/checkout@v6
+
+      # nginx must keep blocking serve/* and job/batch, also after a Renovate rclone bump
+      - name: "🚀 Run the ingress rig"
+        run: rclone_backup/tests/ingress-rig.sh
 
   build:
     name: "Build ${{ matrix.architecture }}"

@@ -25,6 +25,36 @@ RUN if [ "${BUILD_ARCH}" = "armhf" ]; then \
     && go build -o scheduler.bin
 
 
+# Web GUI is platform independent, so build it once on the build host
+FROM --platform=$BUILDPLATFORM node:24-alpine AS webui
+
+# renovate: datasource=github-releases depName=rclone-web packageName=rclone/rclone-web
+ENV RCLONE_WEB_INSTALLED_VERSION=1.2.0
+WORKDIR /app
+
+COPY rclone-web/base-path.patch rclone-web/oauth-headless.patch rclone-web/no-serves.patch \
+    rclone-web/settings-save.patch rclone-web/option-choices.patch /tmp/
+
+# Patch rclone-web to run under a sub-path (Home Assistant ingress), to add browser-login
+# remotes headless (paste the token from `rclone authorize`), to remove Serves, Download and
+# self-update (a serve cannot be reached from outside the container), to fix saving the
+# config contents in Settings (an upstream bug), and to list every choice of an option with
+# examples (for example iCloud Photos), then build it,
+# failing if the built page still loads anything from an absolute path
+RUN apk add --no-cache patch \
+    && wget -qO- https://github.com/rclone/rclone-web/archive/refs/tags/"${RCLONE_WEB_INSTALLED_VERSION}".tar.gz \
+        | tar -xz --strip-components=1 \
+    && patch -p1 --fuzz=0 < /tmp/base-path.patch \
+    && patch -p1 --fuzz=0 < /tmp/oauth-headless.patch \
+    && patch -p1 --fuzz=0 < /tmp/no-serves.patch \
+    && patch -p1 --fuzz=0 < /tmp/settings-save.patch \
+    && patch -p1 --fuzz=0 < /tmp/option-choices.patch \
+    && npm ci --no-audit --no-fund \
+    && npm run build \
+    && grep -q 'src="./assets/' dist/index.html \
+    && ! grep -E '(src|href)="/' dist/index.html
+
+
 FROM $BUILD_FROM
 
 # Build arguments
@@ -39,23 +69,17 @@ ARG BUILD_VERSION
 ENV LANG=C.UTF-8
 # renovate: datasource=github-releases depName=rclone packageName=rclone/rclone
 ENV RCLONE_INSTALLED_VERSION=1.74.3
-# renovate: datasource=github-releases depName=rclone-webui packageName=rclone/rclone-webui-react
-ENV RCLONE_WEBUI_INSTALLED_VERSION=2.0.5
 
-# Install fuse
-RUN apk add fuse \
+# Install fuse and nginx (ingress proxy)
+RUN apk add fuse nginx \
     && sed -i 's/#user_allow_other/user_allow_other/' /etc/fuse.conf \
     && ln -s /bin/fusermount /bin/fusermount3
 
 # Copy root filesystem
 COPY rootfs /
 
-# Download Web GUI
-RUN curl -LJo /tmp/currentbuild.zip https://github.com/rclone/rclone-webui-react/releases/download/v"${RCLONE_WEBUI_INSTALLED_VERSION}"/currentbuild.zip \
-    && unzip /tmp/currentbuild.zip -d /tmp \
-    && mkdir -p /usr/share/rclone-webui-react \
-    && mv /tmp/build/* /usr/share/rclone-webui-react \
-    && rm -rf /tmp/*
+# Add Web GUI
+COPY --from=webui /app/dist /usr/share/rclone-web
 
 # Fix permissions
 RUN chmod a+x /etc/cont-init.d/*
