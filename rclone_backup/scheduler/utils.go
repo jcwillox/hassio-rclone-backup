@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"github.com/jcwillox/emerald"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -57,10 +56,9 @@ func FlagMapToList(flags map[string]string) []string {
 		if !strings.HasPrefix(key, "--") {
 			key = "--" + key
 		}
+		// no quotes around values with spaces: rclone runs without a shell, so it would keep them
 		if value == "False" || value == "True" {
 			value = strings.ToLower(value)
-		} else if value != "" && value != "None" && strings.Contains(value, " ") {
-			value = strconv.Quote(value)
 		}
 		if value != "" && value != "None" {
 			flagList = append(flagList, key+"="+value)

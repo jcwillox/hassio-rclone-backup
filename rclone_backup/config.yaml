@@ -24,23 +24,15 @@ map:
   - share:rw
   - ssl:ro
 options:
-  jobs:
-    - name: Sync Daily Backups
-      schedule: 10 4 * * *
-      command: sync
-      sources:
-        - "/backup"
-      destination: google:/Backup/Home Assistant
-      include: []
-      exclude: []
-      flags: {}
+  # no default job: a job naming a remote that does not exist stops the app on its first start
+  jobs: []
   dry_run: true
   config_path: "/homeassistant/rclone.conf"
 schema:
   jobs:
     - name: str?
       schedule: str?
-      command: str
+      command: list(copy|sync|move|delete)
       source: str?
       sources:
         - str?
@@ -64,6 +56,7 @@ schema:
   no_rename: bool?
   no_unrename: bool?
   no_slugify: bool?
+  no_events: bool?
   log_level: list(debug|info|warning|error|fatal)?
 image: ghcr.io/jcwillox/hassio-rclone-backup/{arch}
 devices:

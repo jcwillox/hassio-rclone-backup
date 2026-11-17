@@ -1,0 +1,56 @@
+diff --git a/e2e/settings-save.spec.ts b/e2e/settings-save.spec.ts
+new file mode 100644
+--- /dev/null
++++ b/e2e/settings-save.spec.ts
+@@ -0,0 +1,39 @@
++import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
++import { tmpdir } from 'node:os'
++import { join } from 'node:path'
++import { expect, test } from '@playwright/test'
++import { getTestEnv, loginUrl, rcloneRC } from './helpers'
++
++// Settings saves edited config contents with operations/uploadfile. The app must build that URL
++// from the rc URL alone: upstream passed '/operations/uploadfile' as the URL *base*, which is not
++// absolute, so every save threw "Failed to construct 'URL': Invalid base URL" before any request.
++// The config file does not exist yet, as on a fresh Home Assistant install.
++
++test('saving edited config contents writes the config file, even when it does not exist yet', async ({
++    page,
++}) => {
++    const { appUrl } = getTestEnv()
++    const { config: originalPath } = (await rcloneRC('/config/paths')) as { config: string }
++    const configPath = join(mkdtempSync(join(tmpdir(), 'rclone-web-settings-')), 'rclone.conf')
++    const contents = '[settings-save]\ntype = local\n'
++    await rcloneRC('/config/setpath', { path: configPath })
++
++    try {
++        await page.goto(loginUrl())
++        await page.waitForURL(appUrl + '/')
++        await page.locator('header nav').getByRole('link', { name: 'Settings' }).click()
++
++        await page.getByRole('button', { name: 'Show config' }).click()
++        const editor = page.locator('textarea')
++        await expect(editor).toBeEnabled()
++        await editor.fill(contents)
++        await page.getByRole('button', { name: 'Save Changes' }).click()
++
++        await expect(page.getByText('Settings saved.')).toBeVisible()
++        await expect(page.getByText(/Could not save settings/)).toHaveCount(0)
++        expect(existsSync(configPath)).toBe(true)
++        expect(readFileSync(configPath, 'utf8')).toBe(contents)
++    } finally {
++        await rcloneRC('/config/setpath', { path: originalPath })
++    }
++})
+diff --git a/src/rclone/client.ts b/src/rclone/client.ts
+--- a/src/rclone/client.ts
++++ b/src/rclone/client.ts
+@@ -167,7 +167,7 @@ export async function rcloneUploadFile({
+         throwRcloneError('No rclone RC connection configured.')
+     }
+ 
+-    const url = new URL(auth.url.replace(/^\//, ''), '/operations/uploadfile')
++    const url = new URL(`${auth.url}/operations/uploadfile`, window.location.href)
+     url.searchParams.set('fs', fs)
+     url.searchParams.set('remote', remote)
+ 

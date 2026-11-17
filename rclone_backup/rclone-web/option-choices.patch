@@ -1,0 +1,231 @@
+diff --git a/e2e/option-choices.spec.ts b/e2e/option-choices.spec.ts
+new file mode 100644
+--- /dev/null
++++ b/e2e/option-choices.spec.ts
+@@ -0,0 +1,73 @@
++import { expect, type Page, test } from '@playwright/test'
++import { getTestEnv, loginUrl } from './helpers'
++
++async function startICloudRemote(page: Page) {
++    await page.goto(loginUrl())
++    const { appUrl } = getTestEnv()
++    await page.waitForURL(appUrl + '/')
++    await page.goto(appUrl + '/remotes')
++    await page.getByRole('button', { name: 'Add New Remote' }).first().click()
++    await page.getByPlaceholder('Select type or search').fill('iCloud')
++    await page
++        .getByRole('option', { name: /^iCloud Drive/ })
++        .first()
++        .click()
++}
++
++// An option with examples starts filled with its default. A <datalist> then only suggests entries
++// that match that text, so the other choices (iCloud Photos here) cannot be found.
++test('every choice of an option with examples can be picked, even with a default filled in', async ({
++    page,
++}) => {
++    await startICloudRemote(page)
++
++    const service = page.getByLabel('service', { exact: true })
++    await expect(service).toHaveValue('drive')
++
++    await page.getByRole('button', { name: 'Choices for service' }).click()
++    await expect(page.getByRole('menuitem', { name: /^drive/ })).toBeVisible()
++    await page.getByRole('menuitem', { name: /^photos/ }).click()
++
++    await expect(service).toHaveValue('photos')
++})
++
++test('a value that is not one of the examples can still be typed', async ({ page }) => {
++    await startICloudRemote(page)
++
++    const service = page.getByLabel('service', { exact: true })
++    await service.fill('custom-value')
++    await expect(service).toHaveValue('custom-value')
++})
++
++// S3 provider choices have long help text, the widest menu in practice
++test('the choices menu stays inside a phone-width screen', async ({ page }) => {
++    await page.setViewportSize({ width: 360, height: 740 })
++    await page.goto(loginUrl())
++    const { appUrl } = getTestEnv()
++    await page.waitForURL(appUrl + '/')
++    await page.goto(appUrl + '/remotes')
++    await page.getByRole('button', { name: 'Add New Remote' }).first().click()
++    await page.getByPlaceholder('Select type or search').fill('Amazon S3')
++    await page.getByRole('option', { name: / s3$/ }).first().click()
++
++    await page.getByRole('button', { name: 'Choices for provider' }).click()
++    const menu = page.getByRole('menu')
++    await expect(menu).toBeVisible()
++    const box = await menu.boundingBox()
++    expect(box).not.toBeNull()
++    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(360)
++    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360)
++})
++
++// The form sends passwords with obscure: true, so an already obscured value (copied from
++// rclone.conf) would be obscured twice. The field says what to type.
++test('a password field says to type the password itself', async ({ page }) => {
++    await startICloudRemote(page)
++
++    await expect(page.getByLabel('password', { exact: true })).toHaveAccessibleDescription(
++        /Type the password itself, not an obscured value/
++    )
++    await expect(page.getByLabel('apple_id', { exact: true })).not.toHaveAccessibleDescription(
++        /Type the password itself/
++    )
++})
+diff --git a/src/components/OptionField.tsx b/src/components/OptionField.tsx
+--- a/src/components/OptionField.tsx
++++ b/src/components/OptionField.tsx
+@@ -1,6 +1,13 @@
+-import { useId, useMemo } from 'react'
++import { ChevronDownIcon } from 'lucide-react'
++import { type ChangeEvent, useId, useMemo } from 'react'
+ import { Checkbox } from '@/components/ui/checkbox'
+ import {
++    DropdownMenu,
++    DropdownMenuContent,
++    DropdownMenuItem,
++    DropdownMenuTrigger,
++} from '@/components/ui/dropdown-menu'
++import {
+     Field,
+     FieldContent,
+     FieldDescription,
+@@ -8,6 +15,13 @@
+     FieldTitle,
+ } from '@/components/ui/field'
+ import { Input } from '@/components/ui/input'
++import {
++    InputGroup,
++    InputGroupAddon,
++    InputGroupButton,
++    InputGroupInput,
++} from '@/components/ui/input-group'
++import { useT } from '@/lib/i18n'
+ 
+ export type OptionFieldOption = {
+     Name: string
+@@ -84,6 +98,8 @@
+     showExamples?: boolean
+ }) {
+     const fieldId = useId()
++    const hintId = `${fieldId}-hint`
++    const t = useT()
+     const { listId, helpTitle, description, examples, hasExamples } = useMemo(() => {
+         const [nextHelpTitle, ...helpDetails] = (option.Help ?? '').split('\n')
+         const nextExamples = showExamples ? (option.Examples ?? []) : []
+@@ -119,24 +135,76 @@
+         )
+     }
+ 
++    const inputProps = {
++        id: fieldId,
++        name: option.Name,
++        type: option.IsPassword ? 'password' : 'text',
++        value: normalizeText(value),
++        onChange: (event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value),
++        placeholder: helpTitle,
++        required: option.Required,
++        list: hasExamples ? listId : undefined,
++        // The form sends passwords with obscure: true, so the hint says to type the password itself
++        'aria-describedby': option.IsPassword ? hintId : undefined,
++        autoComplete: 'off',
++        autoCapitalize: 'off',
++        autoCorrect: 'off',
++        spellCheck: false,
++    }
++
+     return (
+         <Field>
+             <FieldLabel htmlFor={fieldId}>{option.Name}</FieldLabel>
+-            <Input
+-                id={fieldId}
+-                name={option.Name}
+-                type={option.IsPassword ? 'password' : 'text'}
+-                value={normalizeText(value)}
+-                onChange={(event) => onChange(event.target.value)}
+-                placeholder={helpTitle}
+-                required={option.Required}
+-                list={hasExamples ? listId : undefined}
+-                autoComplete="off"
+-                autoCapitalize="off"
+-                autoCorrect="off"
+-                spellCheck={false}
+-            />
+             {hasExamples ? (
++                // A <datalist> only suggests entries that match the text already in the field, and
++                // the field starts with the default, so the menu lists every choice. Typing a value
++                // that is not an example stays possible.
++                <InputGroup>
++                    {/* Hide the browser's own datalist arrow: the menu button is the one arrow.
++                        Chrome forces its display, so it is made transparent and zero-width. */}
++                    <InputGroupInput
++                        {...inputProps}
++                        className="[&::-webkit-calendar-picker-indicator]:w-0 [&::-webkit-calendar-picker-indicator]:p-0 [&::-webkit-calendar-picker-indicator]:m-0 [&::-webkit-calendar-picker-indicator]:opacity-0"
++                    />
++                    <InputGroupAddon align="inline-end">
++                        <DropdownMenu>
++                            <DropdownMenuTrigger
++                                render={
++                                    <InputGroupButton
++                                        size="icon-xs"
++                                        aria-label={`Choices for ${option.Name}`}
++                                    />
++                                }
++                            >
++                                <ChevronDownIcon />
++                            </DropdownMenuTrigger>
++                            {/* At most the screen width less the page gutters, so long help
++                                text wraps instead of widening the page on a phone */}
++                            <DropdownMenuContent
++                                align="end"
++                                className="w-auto max-w-[calc(100vw-2rem)]"
++                            >
++                                {examples.map((example, index) => (
++                                    <DropdownMenuItem
++                                        key={`${example.Value ?? 'example'}-${index}`}
++                                        onClick={() => onChange(example.Value ?? '')}
++                                    >
++                                        <span className="font-mono">{example.Value}</span>
++                                        {example.Help ? (
++                                            <span className="text-muted-foreground whitespace-normal">
++                                                {example.Help.split('\n')[0]}
++                                            </span>
++                                        ) : null}
++                                    </DropdownMenuItem>
++                                ))}
++                            </DropdownMenuContent>
++                        </DropdownMenu>
++                    </InputGroupAddon>
++                </InputGroup>
++            ) : (
++                <Input {...inputProps} />
++            )}
++            {hasExamples ? (
+                 <datalist id={listId}>
+                     {examples.map((example, index) => (
+                         <option
+@@ -148,6 +216,9 @@
+                     ))}
+                 </datalist>
+             ) : null}
++            {option.IsPassword ? (
++                <FieldDescription id={hintId}>{t('optionField.passwordHint')}</FieldDescription>
++            ) : null}
+             {description ? <FieldDescription>{description}</FieldDescription> : null}
+         </Field>
+     )
+diff --git a/src/languages/en.json b/src/languages/en.json
+--- a/src/languages/en.json
++++ b/src/languages/en.json
+@@ -146,6 +146,7 @@
+     "nav.transfers": "Transfers",
+     "optionGroup.changed": "{count} changed",
+     "optionGroup.moreOptions": "More options",
++    "optionField.passwordHint": "Type the password itself, not an obscured value from rclone.conf. rclone obscures it when it saves.",
+     "remotes.addNew": "Add New Remote",
+     "remotes.deleteConfirm": "Are you sure you want to delete the remote \"{name}\"?",
+     "remotes.deleteError": "Could not delete remote: {message}",

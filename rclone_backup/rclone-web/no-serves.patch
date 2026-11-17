@@ -1,0 +1,501 @@
+diff --git a/e2e/no-serves.spec.ts b/e2e/no-serves.spec.ts
+new file mode 100644
+--- /dev/null
++++ b/e2e/no-serves.spec.ts
+@@ -0,0 +1,80 @@
++import { mkdtempSync, writeFileSync } from 'node:fs'
++import { tmpdir } from 'node:os'
++import { join } from 'node:path'
++import { expect, type Page, test } from '@playwright/test'
++import { getTestEnv, loginUrl } from './helpers'
++
++// Serves cannot be reached from outside the add-on's container, so the app has no Serves UI and
++// never calls serve/*. Self-update would replace the rclone binary inside the image, so it is gone too.
++
++async function recordRcCalls(page: Page) {
++    const servePaths: string[] = []
++    const commandBodies: string[] = []
++    page.on('request', (request) => {
++        const { pathname } = new URL(request.url())
++        if (pathname.includes('/serve/')) servePaths.push(pathname)
++    })
++    // A pass-through route makes Chromium buffer the body, which a plain request listener misses
++    await page.route('**/core/command', async (route) => {
++        commandBodies.push(route.request().postData() ?? '')
++        await route.continue()
++    })
++    return { servePaths, commandBodies }
++}
++
++test('the app has no Serves tab, card or route and never calls serve/*', async ({ page }) => {
++    const calls = await recordRcCalls(page)
++    const { appUrl } = getTestEnv()
++    await page.goto(loginUrl())
++    await page.waitForURL(appUrl + '/')
++
++    const nav = page.locator('header nav')
++    await expect(nav.getByRole('link', { name: 'Mounts' })).toBeVisible()
++    await expect(nav.getByRole('link', { name: 'Serves' })).toHaveCount(0)
++    await expect(page.getByText('Mounts', { exact: true }).last()).toBeVisible()
++    await expect(page.getByText('Serves', { exact: true })).toHaveCount(0)
++
++    // Navigate inside the app: the build uses relative asset paths, so a cold load of a nested
++    // path such as /serves/new cannot find its bundle (HA always opens the panel at its root)
++    for (const path of ['/serves', '/serves/new']) {
++        await page.getByRole('link', { name: 'Mounts' }).click()
++        await expect(page).toHaveURL(appUrl + '/mounts')
++        await page.evaluate((target) => {
++            window.history.pushState({}, '', target)
++            window.dispatchEvent(new PopStateEvent('popstate'))
++        }, path)
++        await expect(page).toHaveURL(appUrl + '/')
++        await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
++    }
++
++    await page.waitForTimeout(1000)
++    expect(calls.servePaths).toEqual([])
++})
++
++test('the file browser has no Download button', async ({ page }) => {
++    const calls = await recordRcCalls(page)
++    const folder = mkdtempSync(join(tmpdir(), 'no-serves-'))
++    writeFileSync(join(folder, 'report.txt'), 'hello')
++
++    const { appUrl } = getTestEnv()
++    await page.goto(loginUrl())
++    await page.waitForURL(appUrl + '/')
++    await page.goto(`${appUrl}/local?${new URLSearchParams({ disk: folder })}`)
++
++    await expect(page.getByRole('button', { name: 'Rename report.txt' })).toBeAttached()
++    await expect(page.getByRole('button', { name: 'Download report.txt' })).toHaveCount(0)
++    expect(calls.servePaths).toEqual([])
++})
++
++test('the app never checks for or runs an rclone self-update', async ({ page }) => {
++    const calls = await recordRcCalls(page)
++    const { appUrl } = getTestEnv()
++    await page.goto(loginUrl())
++    await page.waitForURL(appUrl + '/')
++    await page.goto(appUrl + '/settings')
++    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
++
++    await page.waitForTimeout(1000)
++    await expect(page.getByRole('button', { name: 'Update available' })).toHaveCount(0)
++    expect(calls.commandBodies.filter((body) => body.includes('selfupdate'))).toEqual([])
++})
+diff --git a/src/App.tsx b/src/App.tsx
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -1,8 +1,7 @@
+-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
++import { useQuery, useQueryClient } from '@tanstack/react-query'
+ import { CheckIcon, GaugeIcon, LogOutIcon, MoonIcon, ScreenShareIcon, SunIcon } from 'lucide-react'
+ import { useCallback, useMemo, useRef, useState } from 'react'
+ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+-import { toast } from 'sonner'
+ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+ import { Separator } from '@/components/ui/separator'
+ import { Switch } from '@/components/ui/switch'
+@@ -11,12 +10,10 @@
+ import { clearAuthSession, useStore } from '@/lib/store'
+ import { cn } from '@/lib/ui'
+ import rclone from '@/rclone/client'
+-import { updateCheckQueryOptions } from '@/rclone/update'
+ 
+ const navItems: { key: TranslationKey; to: string; end?: boolean }[] = [
+     { key: 'nav.remotes', to: '/remotes', end: true },
+     { key: 'nav.mounts', to: '/mounts' },
+-    { key: 'nav.serves', to: '/serves' },
+     { key: 'nav.transfers', to: '/transfers' },
+     { key: 'nav.settings', to: '/settings' },
+ ]
+@@ -26,7 +23,6 @@
+     { path: '/remotes', key: 'app.footerRemotes' },
+     { path: '/mounts', key: 'app.footerMounts' },
+     { path: '/transfers', key: 'app.footerTransfers' },
+-    { path: '/serves', key: 'app.footerServes' },
+ ]
+ 
+ export function App() {
+@@ -36,11 +32,9 @@
+     const queryClient = useQueryClient()
+     const hasAuthCredentials = useStore((state) => Boolean(state.user && state.pass))
+ 
+-    const updateCheckQuery = useQuery(updateCheckQueryOptions())
++    // No self-update check: inside the add-on, rclone comes with the image
+     useQuery({ queryKey: ['core', 'disks'], queryFn: () => rclone('/core/disks') })
+ 
+-    const latestVersion = useMemo(() => updateCheckQuery.data, [updateCheckQuery.data])
+-
+     const isExploreActive =
+         location.pathname === '/local' ||
+         (location.pathname.startsWith('/remotes/') &&
+@@ -56,31 +50,6 @@
+         navigate('/login', { replace: true })
+     }, [navigate])
+ 
+-    const updateMutation = useMutation({
+-        mutationFn: async () => {
+-            await rclone('/core/command', {
+-                body: { command: 'selfupdate' },
+-            })
+-        },
+-        onSuccess: () => {
+-            toast.success(t('app.updateSuccess'))
+-            queryClient.setQueryData(['core', 'updateCheck'], null)
+-            setTimeout(() => {
+-                queryClient.invalidateQueries({ queryKey: ['core', 'version'] })
+-            }, 5000)
+-        },
+-        onError: (error) => {
+-            const message = error instanceof Error ? error.message : t('common.unknownError')
+-            toast.error(t('app.updateError', { message }))
+-        },
+-    })
+-
+-    const handleRcloneUpdate = useCallback(() => {
+-        const shouldUpdate = window.confirm(t('app.updateConfirm'))
+-        if (!shouldUpdate) return
+-        updateMutation.mutate()
+-    }, [updateMutation, t])
+-
+     const longPressTimerRef = useRef<number | null>(null)
+     const longPressFiredRef = useRef(false)
+     const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
+@@ -196,18 +165,6 @@
+                         ))}
+                     </nav>
+                     <div className="ml-auto flex items-center gap-2">
+-                        {latestVersion && (
+-                            <button
+-                                type="button"
+-                                onClick={() => handleRcloneUpdate()}
+-                                disabled={updateMutation.isPending}
+-                                className="px-3 py-1.5 text-sm text-blue-800 transition-colors hover:bg-muted hover:text-blue-700 disabled:opacity-50"
+-                            >
+-                                {updateMutation.isPending
+-                                    ? t('app.updating')
+-                                    : t('app.updateAvailable')}
+-                            </button>
+-                        )}
+                         {hasAuthCredentials && (
+                             <button
+                                 type="button"
+diff --git a/src/pages/Dashboard.tsx b/src/pages/Dashboard.tsx
+--- a/src/pages/Dashboard.tsx
++++ b/src/pages/Dashboard.tsx
+@@ -6,14 +6,12 @@
+     CheckCircle2Icon,
+     CloudIcon,
+     ExternalLinkIcon,
+-    GlobeIcon,
+     HardDriveIcon,
+     type LucideIcon,
+     XIcon,
+ } from 'lucide-react'
+ import { useCallback, useMemo, useState } from 'react'
+ import { Changelog } from '@/components/Changelog'
+-import { toRecord } from '@/components/OptionField'
+ import { PageContent } from '@/components/PageContent'
+ import { PageHeader } from '@/components/PageHeader'
+ import { PageWrapper } from '@/components/PageWrapper'
+@@ -34,7 +32,6 @@
+     type RemoteWithUsage,
+     supportsAbout,
+ } from '@/rclone/usage'
+-import { getRemoteName, getServeAuthLabel } from '@/rclone/utils'
+ 
+ const DISCORD_URL = 'https://discord.gg/rclone'
+ 
+@@ -85,13 +82,6 @@
+             return response.mountPoints ?? []
+         },
+     })
+-    const servesQuery = useQuery({
+-        queryKey: ['serves'],
+-        queryFn: async () => {
+-            const response = await rclone('/serve/list')
+-            return response.list ?? []
+-        },
+-    })
+     const jobsQuery = useQuery({
+         queryKey: ['jobs'],
+         queryFn: fetchJobsSnapshot,
+@@ -121,22 +111,6 @@
+         })
+     }, [remotesList, usageQueries])
+     const mounts = useMemo(() => mountsQuery.data ?? [], [mountsQuery.data])
+-    const serves = useMemo(() => {
+-        const list = servesQuery.data ?? []
+-        return list.map((serve): ServeSummary => {
+-            const params = toRecord(serve.params)
+-            const fs = typeof params.fs === 'string' ? params.fs : ''
+-
+-            return {
+-                id: serve.id,
+-                address: serve.addr,
+-                protocol: typeof params.type === 'string' ? params.type : 'unknown',
+-                remoteName: fs ? getRemoteName(fs) : 'Unknown',
+-                source: fs,
+-                auth: getServeAuthLabel(params),
+-            }
+-        })
+-    }, [servesQuery.data])
+     const jobs = useMemo(() => jobsQuery.data ?? [], [jobsQuery.data])
+     const globalStats = useMemo(() => globalStatsQuery.data, [globalStatsQuery.data])
+     const lastError = typeof globalStats?.lastError === 'string' ? globalStats.lastError.trim() : ''
+@@ -148,10 +122,8 @@
+     const recentFailedJobs = useMemo(() => getJobAttention(jobs), [jobs])
+     const remoteErrors = useMemo(() => getRemoteErrors(remotes), [remotes])
+     const remoteAttention = useMemo(() => getRemoteAttention(remotes), [remotes])
+-    const serveAttention = useMemo(() => getServeAttention(serves), [serves])
+     const isFetchingAny =
+         remotesListQuery.isFetching ||
+-        servesQuery.isFetching ||
+         mountsQuery.isFetching ||
+         jobsQuery.isFetching ||
+         globalStatsQuery.isFetching ||
+@@ -214,7 +186,7 @@
+                         </a>
+                     ) : null}
+ 
+-                    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
++                    <section className="grid gap-4 md:grid-cols-3">
+                         <DashboardMetricCard
+                             title={t('dashboard.remotes')}
+                             value={String(remotes.length)}
+@@ -244,22 +216,6 @@
+                             isError={mountsQuery.isError}
+                         />
+ 
+-                        <DashboardMetricCard
+-                            title={t('dashboard.serves')}
+-                            value={String(serves.length)}
+-                            icon={GlobeIcon}
+-                            attention={
+-                                serveAttention.length > 0
+-                                    ? {
+-                                          heading: t('dashboard.servesNoAuth'),
+-                                          items: serveAttention,
+-                                      }
+-                                    : undefined
+-                            }
+-                            isPending={servesQuery.isPending}
+-                            isError={servesQuery.isError}
+-                        />
+-
+                         {sponsor?.type === 'card' ? (
+                             <a href={sponsor.link} target="_blank" rel="noreferrer">
+                                 <Card className="relative h-full overflow-hidden py-0">
+@@ -454,15 +410,6 @@
+     )
+ }
+ 
+-type ServeSummary = {
+-    id: string
+-    address: string
+-    protocol: string
+-    remoteName: string
+-    source: string
+-    auth: 'none' | 'key' | 'basic' | 'proxy'
+-}
+-
+ function DashboardLink({ link }: { link: (typeof LINKS)[number] }) {
+     const t = useT()
+     // Read once on mount so dismissing the banner doesn't recolor this link underneath
+@@ -675,15 +622,6 @@
+             description: tStandalone('dashboard.percentUsed', {
+                 percent: remote.usage?.percentLabel ?? '--',
+             }),
+-        }))
+-}
+-
+-function getServeAttention(serves: ServeSummary[]) {
+-    return serves
+-        .filter((serve) => serve.auth === 'none')
+-        .map((serve) => ({
+-            title: `${serve.protocol.toUpperCase()} · ${serve.remoteName}`,
+-            description: serve.address,
+         }))
+ }
+ 
+diff --git a/src/pages/RemotesDetails.tsx b/src/pages/RemotesDetails.tsx
+--- a/src/pages/RemotesDetails.tsx
++++ b/src/pages/RemotesDetails.tsx
+@@ -192,13 +192,6 @@
+     }
+ }
+ 
+-function buildServeUrl(rcUrl: string, serveAddr: string): string {
+-    const parsed = new URL(rcUrl.trim().replace(/\/+$/, ''))
+-    const portMatch = serveAddr.match(/:(\d+)$/)
+-    if (!portMatch) throw new Error('Could not parse serve address')
+-    return `${parsed.protocol}//${parsed.hostname}:${portMatch[1]}`
+-}
+-
+ type ListItem = {
+     rowKey: string
+     Name: string
+@@ -465,65 +458,6 @@
+         },
+     })
+ 
+-    const downloadMutation = useMutation({
+-        mutationFn: async ({
+-            fs,
+-            name,
+-            path,
+-            isDir,
+-        }: {
+-            fs: string
+-            name: string
+-            path: string
+-            isDir: boolean
+-        }) => {
+-            const result = await rclone('/serve/start', {
+-                body: { type: 'http', fs, addr: ':0', allow_origin: '*' },
+-            })
+-
+-            const { id: serveId, addr: serveAddr } = result
+-
+-            try {
+-                const { url } = useStore.getState()
+-                const serveBaseUrl = buildServeUrl(url, serveAddr)
+-
+-                const downloadUrl = isDir
+-                    ? `${serveBaseUrl}/${path}/?download=zip`
+-                    : `${serveBaseUrl}/${path}`
+-
+-                const response = await fetch(downloadUrl)
+-                if (!response.ok) {
+-                    throw new Error(`Download failed: ${response.status} ${response.statusText}`)
+-                }
+-
+-                const blob = await response.blob()
+-                const objectUrl = URL.createObjectURL(blob)
+-                const a = document.createElement('a')
+-                a.href = objectUrl
+-                a.download = isDir ? `${name}.zip` : name
+-                document.body.appendChild(a)
+-                a.click()
+-                document.body.removeChild(a)
+-                URL.revokeObjectURL(objectUrl)
+-            } finally {
+-                try {
+-                    await rclone('/serve/stop', {
+-                        params: { query: { id: serveId } },
+-                    })
+-                } catch {
+-                    // Swallow stop errors
+-                }
+-            }
+-        },
+-        onError: (error) => {
+-            toast.error(
+-                t('remotesDetails.downloadError', {
+-                    message: error instanceof Error ? error.message : t('common.unknownError'),
+-                })
+-            )
+-        },
+-    })
+-
+     const transferMutation = useMutation({
+         mutationFn: async ({
+             source,
+@@ -647,14 +581,12 @@
+             mkdirMutation.isPending ||
+             renameMutation.isPending ||
+             uploadMutation.isPending ||
+-            downloadMutation.isPending ||
+             transferMutation.isPending,
+         [
+             deleteMutation.isPending,
+             mkdirMutation.isPending,
+             renameMutation.isPending,
+             uploadMutation.isPending,
+-            downloadMutation.isPending,
+             transferMutation.isPending,
+         ]
+     )
+@@ -716,19 +648,6 @@
+         [currentPath, currentFs, deleteMutation.mutate, t]
+     )
+ 
+-    const handleDownload = useCallback(
+-        (item: ListItem) => {
+-            const itemPath = [currentPath, item.Name].filter(Boolean).join('/')
+-            downloadMutation.mutate({
+-                fs: currentFs,
+-                name: item.Name,
+-                path: itemPath,
+-                isDir: item.IsDir,
+-            })
+-        },
+-        [currentPath, currentFs, downloadMutation.mutate]
+-    )
+-
+     const handleTransfer = useCallback(
+         (item: ListItem) => {
+             const itemPath = [currentPath, item.Name].filter(Boolean).join('/')
+@@ -1405,38 +1324,6 @@
+                                                                         </TooltipContent>
+                                                                     </Tooltip>
+                                                                 </div>
+-                                                                <Tooltip>
+-                                                                    <TooltipTrigger
+-                                                                        render={
+-                                                                            <Button
+-                                                                                type="button"
+-                                                                                variant="ghost"
+-                                                                                size="icon-xs"
+-                                                                                aria-label={`Download ${item.Name}`}
+-                                                                                disabled={
+-                                                                                    isMutating ||
+-                                                                                    !!transferSource
+-                                                                                }
+-                                                                                onClick={() =>
+-                                                                                    handleDownload(
+-                                                                                        item
+-                                                                                    )
+-                                                                                }
+-                                                                            >
+-                                                                                <DownloadIcon className="size-3.5" />
+-                                                                            </Button>
+-                                                                        }
+-                                                                    />
+-                                                                    <TooltipContent>
+-                                                                        {item.IsDir
+-                                                                            ? t(
+-                                                                                  'remotesDetails.downloadZip'
+-                                                                              )
+-                                                                            : t(
+-                                                                                  'remotesDetails.download'
+-                                                                              )}
+-                                                                    </TooltipContent>
+-                                                                </Tooltip>
+                                                                 <Tooltip>
+                                                                     <TooltipTrigger
+                                                                         render={
+diff --git a/src/router.tsx b/src/router.tsx
+--- a/src/router.tsx
++++ b/src/router.tsx
+@@ -10,8 +10,6 @@
+ import { RemotesDetailsPage } from '@/pages/RemotesDetails'
+ import { RemotesEditPage } from '@/pages/RemotesEdit'
+ import { RemotesNewPage } from '@/pages/RemotesNew'
+-import { ServesPage } from '@/pages/Serves'
+-import { ServesNewPage } from '@/pages/ServesNew'
+ import { SettingsPage } from '@/pages/Settings'
+ import App from './App'
+ import { TransfersPage } from './pages/Transfers'
+@@ -70,8 +68,8 @@
+                         { path: 'remotes/:remoteName/edit', element: <RemotesEditPage /> },
+                         { path: 'mounts', element: <MountsPage /> },
+                         { path: 'mounts/new', element: <MountsNewPage /> },
+-                        { path: 'serves', element: <ServesPage /> },
+-                        { path: 'serves/new', element: <ServesNewPage /> },
++                        // No Serves: a serve is not reachable from outside the add-on
++                        { path: 'serves/*', element: <Navigate replace={true} to="/" /> },
+                         { path: 'transfers', element: <TransfersPage /> },
+                         { path: 'settings', element: <SettingsPage /> },
+                     ],

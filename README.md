@@ -5,9 +5,9 @@ This pairs well with the custom integration [Auto Backup](https://github.com/jcw
 
 Rclone Backup can sync specific backups, e.g. backups starting with `AutoBackup*` to a cloud provider, and when that backup is deleted from Home Assistant it will be removed from the cloud provider as well.
 
-You can also directly sync your Home Configuration e.g. `/config`, `/share`, `/ssl`, `/media` to a cloud service or to another machine using SFTP. Rclone is smart and will only upload changed files.
+You can also directly sync your Home Configuration e.g. `/homeassistant`, `/share`, `/ssl`, `/media` to a cloud service or to another machine using SFTP. Rclone is smart and will only upload changed files.
 
-The app also supports monitoring rclone and configuring or exploring remotes through [rclone-web](https://github.com/rclone/rclone-web). Some Web UI tabs have limits inside Home Assistant. Before its first start, the app needs a working `rclone.conf` file, which you create and test on your computer first. Read **Before you start** and **Using the Web UI** in the app's **Documentation** tab first.
+The app also supports monitoring rclone and configuring or exploring remotes through [rclone-web](https://github.com/rclone/rclone-web). Some Web UI tabs have limits inside Home Assistant. The app starts with no jobs: you add your remotes in the Web UI, which creates the `rclone.conf` file for you, and then add jobs that use them. Read **Before you start** and **Using the Web UI** in the app's **Documentation** tab first.
 
 ![webui-example](https://github.com/jcwillox/hassio-rclone-backup/raw/main/example.png)
 
@@ -55,23 +55,15 @@ jobs:
     sources:
       - /backup
     destination: 'hassbackup:'
-    include:
-      - DailyBackup*
     exclude: []
     # we can also disable google drive trash using flags
     flags:
       drive-use-trash: false
-  # In case we also want to prune backups that are older than 14 days
-  - name: Prune Old Backups
-    schedule: 10 5 * * *
-    command: delete
-    sources:
-      - 'hassbackup:'
-    flags:
-      min-age: 14d
 dry_run: false
 config_path: /homeassistant/rclone.conf
 ```
+
+A job's `command` is `copy`, `sync`, `move` or `delete`. With `sync`, the cloud keeps the same backups as Home Assistant, so set how long backups are kept in Home Assistant itself, and do not add a `delete` job for the same remote. To keep backups in the cloud for a set time, use a `copy` job and a `delete` job with the same age limit; the **Documentation** tab has an example. A `delete` job has no destination, its sources must be remotes, and it needs a filter such as `min-age`.
 
 ## Providers
 

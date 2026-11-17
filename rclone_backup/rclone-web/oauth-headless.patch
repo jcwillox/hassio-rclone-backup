@@ -1,0 +1,948 @@
+diff --git a/e2e/remotes-oauth.spec.ts b/e2e/remotes-oauth.spec.ts
+new file mode 100644
+--- /dev/null
++++ b/e2e/remotes-oauth.spec.ts
+@@ -0,0 +1,219 @@
++import { expect, test } from '@playwright/test'
++import { getTestEnv, loginUrl, rcloneRC } from './helpers'
++
++// A token in the shape `rclone authorize` prints. It is never used to reach Box.
++const TOKEN = JSON.stringify({
++    access_token: 'test-access',
++    token_type: 'Bearer',
++    refresh_token: 'test-refresh',
++    expiry: '2099-01-01T00:00:00Z',
++})
++
++test.afterEach(async () => {
++    await rcloneRC('/config/delete', { name: 'test-box' })
++})
++
++// Opens the Remotes page. Deeper pages are reached by clicking, as a user does: a reload on a
++// two-segment path cannot find the relative ./assets/ bundle.
++async function openRemotes(page: import('@playwright/test').Page) {
++    await page.goto(loginUrl())
++    const { appUrl } = getTestEnv()
++    await page.waitForURL(appUrl + '/')
++    await page.goto(appUrl + '/remotes')
++}
++
++async function startBoxRemote(page: import('@playwright/test').Page) {
++    await openRemotes(page)
++    await page.getByRole('button', { name: 'Add New Remote' }).first().click()
++    await page.getByPlaceholder('Remote name (for your reference)').fill('test-box')
++    await page.getByPlaceholder('Select type or search').fill('box')
++    await page.getByRole('option', { name: /^box/i }).first().click()
++    await page.getByRole('button', { name: 'Create Remote' }).click()
++    const dialog = page.getByRole('dialog')
++    await expect(dialog).toContainText('rclone authorize "box"')
++    return dialog
++}
++
++test('creates an OAuth remote with a token pasted from rclone authorize', async ({ page }) => {
++    const dialog = await startBoxRemote(page)
++    await dialog.getByLabel('config_token').fill(TOKEN)
++    await dialog.getByRole('button', { name: 'Continue' }).click()
++
++    await expect(page).toHaveURL(/\/remotes$/)
++    const config = (await rcloneRC('/config/get', { name: 'test-box' })) as Record<string, string>
++    expect(config.type).toBe('box')
++    expect(JSON.parse(config.token).refresh_token).toBe('test-refresh')
++    expect(config).not.toHaveProperty('config_is_local')
++})
++
++test('cancelling the token question removes the half-created remote', async ({ page }) => {
++    const dialog = await startBoxRemote(page)
++    await dialog.getByRole('button', { name: 'Cancel' }).click()
++
++    await expect(dialog).toBeHidden()
++    const { remotes } = (await rcloneRC('/config/listremotes')) as { remotes?: string[] }
++    expect(remotes ?? []).not.toContain('test-box')
++})
++
++test('editing an OAuth remote asks before refreshing its token', async ({ page }) => {
++    await rcloneRC('/config/create', {
++        name: 'test-box',
++        type: 'box',
++        parameters: { token: TOKEN, config_refresh_token: 'false' },
++        opt: { nonInteractive: true },
++    })
++    await openRemotes(page)
++    await page.getByRole('button', { name: 'Edit test-box' }).click()
++    await page.getByRole('button', { name: 'Save Changes' }).click()
++
++    const dialog = page.getByRole('dialog')
++    // The wording changes between rclone versions
++    await expect(dialog).toContainText(/token/i)
++    await dialog.getByRole('button', { name: /^false/ }).click()
++
++    await expect(page).toHaveURL(/\/remotes$/)
++    const config = (await rcloneRC('/config/get', { name: 'test-box' })) as Record<string, string>
++    expect(JSON.parse(config.token).refresh_token).toBe('test-refresh')
++})
++
++test('editing an OAuth remote can log in again without a browser question', async ({ page }) => {
++    await rcloneRC('/config/create', {
++        name: 'test-box',
++        type: 'box',
++        parameters: { token: TOKEN, config_refresh_token: 'false' },
++        opt: { nonInteractive: true },
++    })
++    await openRemotes(page)
++    await page.getByRole('button', { name: 'Edit test-box' }).click()
++    await page.getByRole('button', { name: 'Save Changes' }).click()
++
++    const dialog = page.getByRole('dialog')
++    await expect(dialog).toContainText(/token/i)
++    await dialog.getByRole('button', { name: /^true/ }).click()
++
++    await expect(dialog).toContainText('rclone authorize "box"')
++    await dialog.getByLabel('config_token').fill(TOKEN.replace('test-refresh', 'new-refresh'))
++    await dialog.getByRole('button', { name: 'Continue' }).click()
++
++    await expect(page).toHaveURL(/\/remotes$/)
++    const config = (await rcloneRC('/config/get', { name: 'test-box' })) as Record<string, string>
++    expect(JSON.parse(config.token).refresh_token).toBe('new-refresh')
++    expect(config).not.toHaveProperty('config_is_local')
++})
++
++// A token with a long access token, as some providers issue. It has no spaces, so it cannot wrap at
++// a word break.
++const LONG_TOKEN = JSON.stringify({
++    access_token: 'a'.repeat(600),
++    token_type: 'Bearer',
++    refresh_token: 'long-refresh',
++    expiry: '2099-01-01T00:00:00Z',
++})
++
++test('a token pasted with line breaks is saved on one line', async ({ page }) => {
++    const dialog = await startBoxRemote(page)
++    // Breaks after commas and inside a value, as a hand-wrapped or terminal-wrapped paste has
++    const wrapped = `  ${TOKEN.replaceAll(',', ',\n').replace('test-access', 'test-\naccess')}\n`
++    await dialog.getByLabel('config_token').fill(wrapped)
++    await dialog.getByRole('button', { name: 'Continue' }).click()
++
++    await expect(page).toHaveURL(/\/remotes$/)
++    const config = (await rcloneRC('/config/get', { name: 'test-box' })) as Record<string, string>
++    expect(config.token).not.toMatch(/[\n\r]/)
++    expect(JSON.parse(config.token)).toEqual(JSON.parse(TOKEN))
++    expect(Object.keys(config).sort()).toEqual(['token', 'type'])
++})
++
++test('a long token wraps inside the dialog and Continue stays on screen', async ({ page }) => {
++    const dialog = await startBoxRemote(page)
++    const field = dialog.getByLabel('config_token')
++    await field.fill(LONG_TOKEN)
++
++    const dialogBox = await dialog.boundingBox()
++    const fieldBox = await field.boundingBox()
++    expect(fieldBox!.x + fieldBox!.width).toBeLessThanOrEqual(dialogBox!.x + dialogBox!.width)
++    await expect(dialog.getByRole('button', { name: 'Continue' })).toBeInViewport({ ratio: 1 })
++
++    await dialog.getByRole('button', { name: 'Continue' }).click()
++    await expect(page).toHaveURL(/\/remotes$/)
++})
++
++test('pressing Enter in the token field submits the token', async ({ page }) => {
++    const dialog = await startBoxRemote(page)
++    const field = dialog.getByLabel('config_token')
++    await field.fill(TOKEN)
++    await field.press('Enter')
++
++    await expect(page).toHaveURL(/\/remotes$/)
++    const config = (await rcloneRC('/config/get', { name: 'test-box' })) as Record<string, string>
++    expect(JSON.parse(config.token).refresh_token).toBe('test-refresh')
++})
++
++async function createBox(parameters: Record<string, string>) {
++    await rcloneRC('/config/create', {
++        name: 'test-box',
++        type: 'box',
++        parameters: { config_refresh_token: 'false', ...parameters },
++        opt: { nonInteractive: true },
++    })
++}
++
++async function editBox(page: import('@playwright/test').Page) {
++    await page.getByRole('button', { name: 'Edit test-box' }).click()
++    await expect(page.getByRole('button', { name: 'Save Changes' })).toBeEnabled()
++}
++
++test('editing does not write back a config read on an earlier visit', async ({ page }) => {
++    // An earlier visit sees a key left over from a broken token
++    await createBox({ token: TOKEN, token_type: '"bearer",' })
++    await openRemotes(page)
++    await editBox(page)
++    // The cache is written at most once a second
++    await page.waitForTimeout(1500)
++
++    // The file is then repaired by hand, and the token renewed, outside the UI
++    await rcloneRC('/config/delete', { name: 'test-box' })
++    const NEW_TOKEN = TOKEN.replace('test-refresh', 'new-refresh')
++    await createBox({ token: NEW_TOKEN })
++
++    // A later visit, without logging in again
++    const { appUrl } = getTestEnv()
++    await page.goto(appUrl + '/remotes')
++    await editBox(page)
++    await page.getByRole('button', { name: 'Save Changes' }).click()
++    const dialog = page.getByRole('dialog')
++    await expect(dialog).toContainText(/token/i)
++    await dialog.getByRole('button', { name: /^false/ }).click()
++
++    await expect(page).toHaveURL(/\/remotes$/)
++    const config = (await rcloneRC('/config/get', { name: 'test-box' })) as Record<string, string>
++    expect(config).not.toHaveProperty('token_type')
++    expect(config.token).toBe(NEW_TOKEN)
++})
++
++test('editing saves a changed value and keeps the rest', async ({ page }) => {
++    await createBox({ token: TOKEN })
++    await openRemotes(page)
++    await editBox(page)
++    await page.getByLabel('client_id', { exact: true }).fill('my-client')
++    await page.getByRole('button', { name: 'Save Changes' }).click()
++    const dialog = page.getByRole('dialog')
++    await expect(dialog).toContainText(/token/i)
++    await dialog.getByRole('button', { name: /^false/ }).click()
++
++    await expect(page).toHaveURL(/\/remotes$/)
++    const config = (await rcloneRC('/config/get', { name: 'test-box' })) as Record<string, string>
++    expect(config.client_id).toBe('my-client')
++    expect(config.token).toBe(TOKEN)
++})
++
++test('a remote config is not kept in browser storage', async ({ page }) => {
++    await createBox({ token: TOKEN })
++    await openRemotes(page)
++    await editBox(page)
++    // The cache is written at most once a second
++    await page.waitForTimeout(1500)
++
++    const stored = await page.evaluate(() => JSON.stringify(window.localStorage))
++    expect(stored).not.toContain('test-access')
++})
+diff --git a/e2e/remotes-password.spec.ts b/e2e/remotes-password.spec.ts
+new file mode 100644
+--- /dev/null
++++ b/e2e/remotes-password.spec.ts
+@@ -0,0 +1,36 @@
++import { execFileSync } from 'node:child_process'
++import { expect, test } from '@playwright/test'
++import { getTestEnv, loginUrl, rcloneRC } from './helpers'
++
++// A plain password that rclone can also "reveal" as if it were already obscured: only base64url
++// characters, at least 22 of them. Without obscure:true, rclone guesses it is obscured, saves it as
++// typed, and the backend later sends garbage to the provider (iCloud answers 401 -20101).
++const PLAIN = 'Abcdefghijklmnopqrstuv'
++
++test.afterEach(async () => {
++    await rcloneRC('/config/delete', { name: 'test-crypt' })
++})
++
++test('a new remote saves a plain password obscured, whatever its shape', async ({ page }) => {
++    await page.goto(loginUrl())
++    const { appUrl } = getTestEnv()
++    await page.waitForURL(appUrl + '/')
++    await page.goto(appUrl + '/remotes')
++    await page.getByRole('button', { name: 'Add New Remote' }).first().click()
++    await page.getByPlaceholder('Remote name (for your reference)').fill('test-crypt')
++    await page.getByPlaceholder('Select type or search').fill('crypt')
++    await page
++        .getByRole('option', { name: / crypt$/ })
++        .first()
++        .click()
++    await page.getByLabel('remote', { exact: true }).fill('/tmp/test-crypt')
++    await page.getByLabel('password', { exact: true }).fill(PLAIN)
++    await page.getByRole('button', { name: 'Create Remote' }).click()
++
++    await expect(page).toHaveURL(/\/remotes$/)
++    const config = (await rcloneRC('/config/get', { name: 'test-crypt' })) as Record<string, string>
++    expect(config.password).not.toBe(PLAIN)
++    expect(execFileSync('rclone', ['reveal', config.password], { encoding: 'utf8' }).trim()).toBe(
++        PLAIN
++    )
++})
+diff --git a/e2e/values-fuzz.spec.ts b/e2e/values-fuzz.spec.ts
+new file mode 100644
+--- /dev/null
++++ b/e2e/values-fuzz.spec.ts
+@@ -0,0 +1,144 @@
++import assert from 'node:assert/strict'
++import { test } from '@playwright/test'
++import { changedValues, normaliseToken } from '../src/rclone/values'
++
++// Seeded random checks of the remote config helpers. They run in Node, without a browser, and use
++// node:assert because Playwright's expect is too slow for thousands of runs.
++// Replay a failure with the seed in its message: FUZZ_SEED=<seed> npx playwright test values-fuzz
++const SEED = Number(process.env.FUZZ_SEED ?? 20261105)
++const RUNS = Number(process.env.FUZZ_RUNS ?? 5000)
++
++// mulberry32: a small, fast PRNG that is the same on every machine for a seed
++function random(seed: number) {
++    let state = seed >>> 0
++    return () => {
++        state = (state + 0x6d2b79f5) >>> 0
++        let t = state
++        t = Math.imul(t ^ (t >>> 15), t | 1)
++        t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
++        return ((t ^ (t >>> 14)) >>> 0) / 4294967296
++    }
++}
++
++type Random = () => number
++
++const int = (rand: Random, min: number, max: number) => min + Math.floor(rand() * (max - min + 1))
++const pick = <T>(rand: Random, items: readonly T[]) => items[int(rand, 0, items.length - 1)]
++const text = (rand: Random, chars: string, min: number, max: number) =>
++    Array.from({ length: int(rand, min, max) }, () => pick(rand, chars.split(''))).join('')
++
++// The characters OAuth tokens and expiry times use: no spaces or line breaks
++const TOKEN_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~+/=:'
++const WHITESPACE = ['\n', '\r\n', '\r', ' ', '\t', '  \n  '] as const
++
++function tokenObject(rand: Random) {
++    const token: Record<string, unknown> = {
++        access_token: text(rand, TOKEN_CHARS, 1, 400),
++        token_type: pick(rand, ['Bearer', 'bearer']),
++        refresh_token: text(rand, TOKEN_CHARS, 0, 200),
++        expiry: text(rand, TOKEN_CHARS, 1, 40),
++    }
++    if (rand() < 0.5) token.expires_in = int(rand, 0, 100_000)
++    return token
++}
++
++// Line breaks and spaces anywhere, inside values too, as a hand-wrapped paste has
++function wrap(rand: Random, value: string) {
++    const chars = value.split('')
++    for (let i = int(rand, 0, 12); i > 0; i--) {
++        chars.splice(int(rand, 0, chars.length), 0, pick(rand, WHITESPACE))
++    }
++    return chars.join('')
++}
++
++// Any text, including line breaks, quotes, braces and non-ASCII characters
++// U+2028 and U+2029 end a line in JavaScript source, so they are built from their codes
++const LINE_SEPARATORS = String.fromCharCode(0x2028, 0x2029)
++const ANY_CHARS = `${TOKEN_CHARS}{}[]",\\ \n\r\t'é😀${LINE_SEPARATORS}`
++
++function check(name: string, property: (rand: Random, run: number) => void) {
++    test(name, () => {
++        for (let run = 0; run < RUNS; run++) {
++            const seed = SEED + run
++            try {
++                property(random(seed), run)
++            } catch (error) {
++                throw new Error(`${name}: failed with FUZZ_SEED=${seed} FUZZ_RUNS=1\n${error}`)
++            }
++        }
++    })
++}
++
++check('a wrapped JSON token comes back as the original one-line token', (rand) => {
++    const token = JSON.stringify(tokenObject(rand))
++    const pasted = wrap(rand, token)
++    assert.equal(normaliseToken(pasted), token, JSON.stringify(pasted))
++})
++
++check('a wrapped base64 blob comes back as the original blob', (rand) => {
++    const blob = btoa(JSON.stringify(tokenObject(rand)))
++    const pasted = wrap(rand, blob)
++    assert.equal(normaliseToken(pasted), blob, JSON.stringify(pasted))
++})
++
++check('a pretty-printed, wrapped token comes back as the original one-line token', (rand) => {
++    const token = tokenObject(rand)
++    const pasted = wrap(rand, JSON.stringify(token, null, int(rand, 1, 8)))
++    assert.equal(normaliseToken(pasted), JSON.stringify(token), JSON.stringify(pasted))
++})
++
++const LINE_BREAK = new RegExp(`[\r\n${LINE_SEPARATORS}]`)
++
++check('the result never has a line break, and normalising again changes nothing', (rand) => {
++    const input = text(rand, ANY_CHARS, 0, 60)
++    const once = normaliseToken(input)
++    assert.doesNotMatch(once, LINE_BREAK, JSON.stringify(input))
++    assert.equal(normaliseToken(once), once, JSON.stringify(input))
++})
++
++const KEYS = [
++    'client_id',
++    'client_secret',
++    'token',
++    'root_folder_id',
++    'box_sub_type',
++    'upload_cutoff',
++]
++
++function value(rand: Random): unknown {
++    return pick(rand, [
++        () => text(rand, TOKEN_CHARS, 0, 8),
++        () => rand() < 0.5,
++        () => int(rand, -3, 3),
++        () => '',
++    ])()
++}
++
++check('only the values the user changed are sent', (rand) => {
++    const loaded: Record<string, unknown> = {}
++    for (const key of KEYS) if (rand() < 0.7) loaded[key] = value(rand)
++
++    // The form starts as the loaded config, then the user edits, clears or adds fields
++    const config = { ...loaded }
++    for (const key of KEYS) {
++        if (rand() < 0.3) config[key] = value(rand)
++    }
++
++    const sent = changedValues(config, loaded)
++    const context = JSON.stringify({ loaded, config, sent })
++    for (const key of Object.keys(sent)) {
++        assert.ok(key in config, context)
++        assert.notEqual(sent[key], loaded[key], context)
++    }
++    for (const [key, edited] of Object.entries(config)) {
++        if (edited !== loaded[key]) assert.equal(sent[key], edited, context)
++    }
++    // rclone keeps what it is not sent, so the remote ends up as the form shows it
++    assert.deepEqual({ ...loaded, ...sent }, { ...loaded, ...config }, context)
++})
++
++check('an unchanged form sends nothing', (rand) => {
++    const loaded: Record<string, unknown> = {}
++    for (const key of KEYS) if (rand() < 0.7) loaded[key] = value(rand)
++    assert.deepEqual(changedValues({ ...loaded }, loaded), {})
++})
+diff --git a/src/components/ConfigQuestionDialog.tsx b/src/components/ConfigQuestionDialog.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/components/ConfigQuestionDialog.tsx
+@@ -0,0 +1,166 @@
++import { useCallback, useId, useRef, useState } from 'react'
++import { Alert, AlertDescription } from '@/components/ui/alert'
++import { Button } from '@/components/ui/button'
++import {
++    Dialog,
++    DialogContent,
++    DialogFooter,
++    DialogHeader,
++    DialogTitle,
++} from '@/components/ui/dialog'
++import { Field, FieldLabel } from '@/components/ui/field'
++import { Input } from '@/components/ui/input'
++import { Textarea } from '@/components/ui/textarea'
++import { useT } from '@/lib/i18n'
++import type { ConfigAsk, ConfigQuestion } from '@/rclone/config'
++
++type Pending = { question: ConfigQuestion; resolve: (answer: string | null) => void }
++
++// Shows rclone's config questions one at a time. Pass `ask` to runRemoteConfig and render `dialog`.
++export function useConfigQuestions() {
++    const [pending, setPending] = useState<Pending | null>(null)
++
++    const ask = useCallback<ConfigAsk>(
++        (question) => new Promise((resolve) => setPending({ question, resolve })),
++        []
++    )
++
++    const answer = useCallback(
++        (value: string | null) => {
++            pending?.resolve(value)
++            setPending(null)
++        },
++        [pending]
++    )
++
++    const dialog = pending ? (
++        <ConfigQuestionDialog
++            key={pending.question.state}
++            question={pending.question}
++            onAnswer={answer}
++        />
++    ) : null
++
++    return { ask, dialog }
++}
++
++function ConfigQuestionDialog({
++    question,
++    onAnswer,
++}: {
++    question: ConfigQuestion
++    onAnswer: (value: string | null) => void
++}) {
++    const t = useT()
++    const fieldId = useId()
++    const { option, error } = question
++    const [value, setValue] = useState(option.DefaultStr ?? '')
++    const answered = useRef(false)
++    const choices = option.Exclusive ? (option.Examples ?? []) : []
++    // Tokens from `rclone authorize` are long JSON, so give them room
++    const multiline = !option.IsPassword && option.Name === 'config_token'
++
++    const submit = (next: string) => {
++        answered.current = true
++        onAnswer(next)
++    }
++
++    return (
++        <Dialog
++            open
++            onOpenChange={(open) => {
++                if (!open && !answered.current) onAnswer(null)
++            }}
++        >
++            {/* Fit the screen and scroll, so the buttons stay reachable */}
++            <DialogContent className="max-h-[calc(100dvh-2rem)] grid-cols-1 overflow-y-auto sm:max-w-lg">
++                <DialogHeader>
++                    <DialogTitle>{t('remotesConfig.title')}</DialogTitle>
++                </DialogHeader>
++
++                <pre className="max-h-64 overflow-auto whitespace-pre-wrap font-sans text-sm text-muted-foreground">
++                    {option.Help}
++                </pre>
++
++                {error ? (
++                    <Alert variant="destructive">
++                        <AlertDescription>{error}</AlertDescription>
++                    </Alert>
++                ) : null}
++
++                {choices.length > 0 ? (
++                    <div className="flex flex-col gap-2">
++                        {choices.map((choice) => (
++                            <Button
++                                key={choice.Value}
++                                type="button"
++                                variant={choice.Value === option.DefaultStr ? 'default' : 'outline'}
++                                className="h-auto justify-start whitespace-normal text-left"
++                                onClick={() => submit(choice.Value ?? '')}
++                            >
++                                {choice.Help ? `${choice.Value}: ${choice.Help}` : choice.Value}
++                            </Button>
++                        ))}
++                    </div>
++                ) : (
++                    <form
++                        id={`${fieldId}-form`}
++                        onSubmit={(event) => {
++                            event.preventDefault()
++                            submit(value)
++                        }}
++                    >
++                        <Field>
++                            <FieldLabel htmlFor={fieldId}>{option.Name}</FieldLabel>
++                            {multiline ? (
++                                <Textarea
++                                    id={fieldId}
++                                    name={option.Name}
++                                    value={value}
++                                    onChange={(event) => setValue(event.target.value)}
++                                    // A token is one line, so Enter submits it like an input
++                                    onKeyDown={(event) => {
++                                        if (
++                                            event.key === 'Enter' &&
++                                            !event.nativeEvent.isComposing
++                                        ) {
++                                            event.preventDefault()
++                                            event.currentTarget.form?.requestSubmit()
++                                        }
++                                    }}
++                                    rows={5}
++                                    // A token has no spaces: wrap it anywhere, at the dialog's width
++                                    className="field-sizing-fixed max-h-48 break-all font-mono text-xs"
++                                    spellCheck={false}
++                                    autoFocus
++                                />
++                            ) : (
++                                <Input
++                                    id={fieldId}
++                                    name={option.Name}
++                                    type={option.IsPassword ? 'password' : 'text'}
++                                    value={value}
++                                    onChange={(event) => setValue(event.target.value)}
++                                    autoComplete="off"
++                                    spellCheck={false}
++                                    autoFocus
++                                />
++                            )}
++                        </Field>
++                    </form>
++                )}
++
++                <DialogFooter>
++                    <Button type="button" variant="outline" onClick={() => onAnswer(null)}>
++                        {t('common.cancel')}
++                    </Button>
++                    {choices.length > 0 ? null : (
++                        <Button type="submit" form={`${fieldId}-form`}>
++                            {t('remotesConfig.continue')}
++                        </Button>
++                    )}
++                </DialogFooter>
++            </DialogContent>
++        </Dialog>
++    )
++}
+diff --git a/src/languages/en.json b/src/languages/en.json
+--- a/src/languages/en.json
++++ b/src/languages/en.json
+@@ -162,6 +162,8 @@
+     "remotes.title": "Remotes",
+     "remotes.type": "Type",
+     "remotes.usage": "Usage",
++    "remotesConfig.continue": "Continue",
++    "remotesConfig.title": "rclone needs more information",
+     "remotesDetails.backToSource": "Back to source",
+     "remotesDetails.cancelTransfer": "Cancel transfer",
+     "remotesDetails.copyHere": "Copy here",
+diff --git a/src/lib/query.ts b/src/lib/query.ts
+--- a/src/lib/query.ts
++++ b/src/lib/query.ts
+@@ -1,6 +1,6 @@
+ import { persistQueryClient } from '@tanstack/query-persist-client-core'
+ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
+-import { hashKey, QueryClient } from '@tanstack/react-query'
++import { defaultShouldDehydrateQuery, hashKey, QueryClient } from '@tanstack/react-query'
+ 
+ export const persistedQueryCacheKey = 'lite-ui-persisted-query-cache'
+ 
+@@ -35,7 +35,13 @@
+     queryClient,
+     persister,
+     maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+-    buster: '116',
++    // Changed so caches saved before remote configs were left out are dropped
++    buster: '116-1',
++    dehydrateOptions: {
++        // A query with meta.persist false (a remote's config, with its secrets) stays in memory only
++        shouldDehydrateQuery: (query) =>
++            defaultShouldDehydrateQuery(query) && query.meta?.persist !== false,
++    },
+ })
+ 
+ export function clearPersistedQueryCache() {
+diff --git a/src/pages/RemotesEdit.tsx b/src/pages/RemotesEdit.tsx
+--- a/src/pages/RemotesEdit.tsx
++++ b/src/pages/RemotesEdit.tsx
+@@ -3,6 +3,7 @@
+ import { useCallback, useEffect, useMemo, useState } from 'react'
+ import { useNavigate, useParams } from 'react-router-dom'
+ import { toast } from 'sonner'
++import { useConfigQuestions } from '@/components/ConfigQuestionDialog'
+ import { OptionField } from '@/components/OptionField'
+ import { PageContent } from '@/components/PageContent'
+ import { PageHeader } from '@/components/PageHeader'
+@@ -14,6 +15,8 @@
+ import { Spinner } from '@/components/ui/spinner'
+ import { useT } from '@/lib/i18n'
+ import rclone from '@/rclone/client'
++import { runRemoteConfig } from '@/rclone/config'
++import { changedValues } from '@/rclone/values'
+ 
+ export function RemotesEditPage() {
+     const t = useT()
+@@ -21,8 +24,11 @@
+     const navigate = useNavigate()
+     const queryClient = useQueryClient()
+     const [config, setConfig] = useState<Record<string, unknown>>({})
++    // The config as loaded, so Save can send only what the user changed
++    const [loadedConfig, setLoadedConfig] = useState<Record<string, unknown>>({})
+     const [showMoreOptions, setShowMoreOptions] = useState(false)
+     const [initialized, setInitialized] = useState(false)
++    const configQuestions = useConfigQuestions()
+ 
+     const remoteConfigQuery = useQuery({
+         queryKey: ['remotes', remoteName, 'config'] as const,
+@@ -34,6 +40,9 @@
+             return response
+         },
+         enabled: Boolean(remoteName),
++        // Holds the remote's secrets, and an old copy would be written back on Save: never keep it
++        meta: { persist: false },
++        gcTime: 0,
+     })
+ 
+     const backendsQuery = useQuery({
+@@ -103,9 +112,14 @@
+         [currentBackendFields]
+     )
+ 
+-    // Pre-fill config from existing remote data once loaded
++    // Pre-fill config from existing remote data once loaded, fresh from rclone
+     useEffect(() => {
+-        if (remoteConfigQuery.data && selectedBackend && !initialized) {
++        if (
++            remoteConfigQuery.data &&
++            remoteConfigQuery.isFetchedAfterMount &&
++            selectedBackend &&
++            !initialized
++        ) {
+             const existing = remoteConfigQuery.data
+             const prefilled: Record<string, unknown> = {}
+ 
+@@ -122,9 +136,15 @@
+             }
+ 
+             setConfig(prefilled)
++            setLoadedConfig(prefilled)
+             setInitialized(true)
+         }
+-    }, [remoteConfigQuery.data, selectedBackend, initialized])
++    }, [
++        remoteConfigQuery.data,
++        remoteConfigQuery.isFetchedAfterMount,
++        selectedBackend,
++        initialized,
++    ])
+ 
+     const updateRemoteMutation = useMutation({
+         mutationFn: async ({
+@@ -134,16 +154,10 @@
+             name: string
+             parameters: Record<string, unknown>
+         }) => {
+-            await rclone('/config/update', {
+-                params: {
+-                    query: {
+-                        name,
+-                        parameters: JSON.stringify(parameters),
+-                    },
+-                },
+-            })
++            return runRemoteConfig({ name, parameters, ask: configQuestions.ask })
+         },
+-        onSuccess: (_data, { name }) => {
++        onSuccess: (completed, { name }) => {
++            if (!completed) return
+             toast.success(t('remotesEdit.updateSuccess', { name }))
+             queryClient.invalidateQueries({ queryKey: ['remotes'] })
+             navigate('/remotes')
+@@ -155,9 +169,11 @@
+     })
+ 
+     const handleSave = useCallback(() => {
+-        const parameters = { ...config }
++        // Send only the changes: resending a loaded value could put back a token that has since
++        // been renewed
++        const parameters = changedValues(config, loadedConfig)
+         updateRemoteMutation.mutate({ name: remoteName!, parameters })
+-    }, [config, updateRemoteMutation, remoteName])
++    }, [config, loadedConfig, updateRemoteMutation, remoteName])
+ 
+     const isPending = remoteConfigQuery.isPending || backendsQuery.isPending
+     const isError = remoteConfigQuery.isError || backendsQuery.isError
+@@ -171,6 +187,7 @@
+ 
+     return (
+         <PageWrapper>
++            {configQuestions.dialog}
+             <PageHeader
+                 title={t('remotesEdit.title', { name: remoteName! })}
+                 description={t('remotesEdit.description')}
+diff --git a/src/pages/RemotesNew.tsx b/src/pages/RemotesNew.tsx
+--- a/src/pages/RemotesNew.tsx
++++ b/src/pages/RemotesNew.tsx
+@@ -4,6 +4,7 @@
+ import { useCallback, useMemo, useState } from 'react'
+ import { useNavigate } from 'react-router-dom'
+ import { toast } from 'sonner'
++import { useConfigQuestions } from '@/components/ConfigQuestionDialog'
+ import { OptionField } from '@/components/OptionField'
+ import { PageContent } from '@/components/PageContent'
+ import { PageHeader } from '@/components/PageHeader'
+@@ -23,6 +24,7 @@
+ import { Spinner } from '@/components/ui/spinner'
+ import { useT } from '@/lib/i18n'
+ import rclone from '@/rclone/client'
++import { runRemoteConfig } from '@/rclone/config'
+ 
+ export function RemotesNewPage() {
+     const t = useT()
+@@ -30,6 +32,7 @@
+     const queryClient = useQueryClient()
+     const [config, setConfig] = useState<Record<string, unknown>>({})
+     const [showMoreOptions, setShowMoreOptions] = useState(false)
++    const configQuestions = useConfigQuestions()
+ 
+     const backendsQuery = useQuery({
+         queryKey: ['backends'],
+@@ -109,19 +112,17 @@
+             type: string
+             parameters: Record<string, unknown>
+         }) => {
+-            await rclone('/config/create', {
+-                params: {
+-                    query: {
+-                        name,
+-                        type,
+-                        parameters: JSON.stringify(parameters),
+-                    },
+-                },
++            const completed = await runRemoteConfig({
++                name,
++                type,
++                parameters,
++                ask: configQuestions.ask,
+             })
+ 
+-            return name
++            return { name, completed }
+         },
+-        onSuccess: async (name) => {
++        onSuccess: async ({ name, completed }) => {
++            if (!completed) return
+             toast.success(t('remotesNew.createSuccess', { name }))
+             await queryClient.invalidateQueries({ queryKey: ['remotes'] })
+             setConfig({})
+@@ -178,6 +179,7 @@
+ 
+     return (
+         <PageWrapper>
++            {configQuestions.dialog}
+             <PageHeader
+                 title={t('remotesNew.title')}
+                 description={t('remotesNew.description')}
+diff --git a/src/rclone/config.ts b/src/rclone/config.ts
+new file mode 100644
+--- /dev/null
++++ b/src/rclone/config.ts
+@@ -0,0 +1,108 @@
++import rclone from '@/rclone/client'
++import { normaliseToken } from '@/rclone/values'
++
++// One question from rclone's config state machine (fs.ConfigOut in rclone). rclone asks these for
++// OAuth logins and for backend setup steps, such as choosing a OneDrive drive.
++export type ConfigQuestionOption = {
++    Name: string
++    Help?: string | null
++    Type?: string | null
++    IsPassword?: boolean
++    Exclusive?: boolean
++    DefaultStr?: string | null
++    Examples?: Array<{ Value?: string; Help?: string }> | null
++}
++
++export type ConfigQuestion = {
++    state: string
++    option: ConfigQuestionOption
++    // rclone's complaint about the previous answer, if any
++    error: string
++}
++
++// Resolves to the answer, or null when the user cancels
++export type ConfigAsk = (question: ConfigQuestion) => Promise<string | null>
++
++type ConfigOut = {
++    State?: string
++    Option?: ConfigQuestionOption | null
++    Error?: string
++}
++
++// rclone runs headless: never let it start its local browser login (a callback server on the rcd
++// host's 127.0.0.1:53682, which the user's browser cannot reach). It then asks for the result of
++// `rclone authorize` instead. config_* keys are not saved to the config file, so they are sent on
++// every call: rclone can reach the browser question later, after "refresh the token?" on an edit.
++const HEADLESS_PARAMETERS = { config_is_local: 'false' }
++
++async function configCall(
++    path: '/config/create' | '/config/update',
++    query: Record<string, unknown>,
++    opt: Record<string, unknown> = {}
++) {
++    const out = await rclone(path, {
++        params: {
++            query: {
++                ...query,
++                // obscure: the form sends passwords as typed. Without it rclone guesses, and a
++                // plain password that happens to decode as obscured is saved raw, then "revealed"
++                // into garbage when used (iCloud answers 401 -20101). Edit sends changed values
++                // only, so a stored, already obscured password is never sent back here.
++                opt: JSON.stringify({ nonInteractive: true, obscure: true, ...opt }),
++            },
++        },
++    })
++
++    return out as ConfigOut
++}
++
++// Creates (when type is set) or updates a remote, asking the user each question rclone returns.
++// Returns false if the user cancels; a cancelled new remote is deleted.
++export async function runRemoteConfig({
++    name,
++    type,
++    parameters,
++    ask,
++}: {
++    name: string
++    type?: string
++    parameters: Record<string, unknown>
++    ask: ConfigAsk
++}) {
++    const query = {
++        name,
++        ...(type ? { type } : {}),
++        parameters: JSON.stringify({ ...HEADLESS_PARAMETERS, ...parameters }),
++    }
++    let out = await configCall(type ? '/config/create' : '/config/update', query)
++
++    while (out.State && out.Option) {
++        const answer =
++            out.Option.Name === 'config_is_local'
++                ? HEADLESS_PARAMETERS.config_is_local
++                : await ask({ state: out.State, option: out.Option, error: out.Error ?? '' })
++
++        if (answer === null) {
++            if (type) {
++                await rclone('/config/delete', { params: { query: { name } } })
++            }
++            return false
++        }
++
++        out = await configCall(
++            '/config/update',
++            { name, parameters: JSON.stringify(HEADLESS_PARAMETERS) },
++            {
++                continue: true,
++                state: out.State,
++                result: out.Option.Name === 'config_token' ? normaliseToken(answer) : answer,
++            }
++        )
++    }
++
++    if (out.Error) {
++        throw new Error(out.Error)
++    }
++
++    return true
++}
+diff --git a/src/rclone/values.ts b/src/rclone/values.ts
+new file mode 100644
+--- /dev/null
++++ b/src/rclone/values.ts
+@@ -0,0 +1,26 @@
++// Pure helpers for remote config values. No imports, so tests can load this file on its own.
++
++// rclone saves a pasted token as typed, and a line break in it corrupts the config file: after a
++// restart rclone reads each extra line as a key of its own. A token from `rclone authorize` is a
++// JSON object (or a base64 blob) with no whitespace in its values, so any whitespace came from the
++// paste: drop all of it, also inside values, and write the object back on one line.
++export function normaliseToken(value: string) {
++    const compact = value.replace(/\s+/g, '')
++    try {
++        const parsed: unknown = JSON.parse(compact)
++        if (parsed !== null && typeof parsed === 'object') {
++            return JSON.stringify(parsed)
++        }
++    } catch {
++        // a base64 blob, or not a token: rclone says if it cannot read it
++    }
++    return compact
++}
++
++// The values in config that differ from loaded. rclone keeps every key it is not sent, so sending
++// only these leaves the rest as they are on disk.
++export function changedValues(config: Record<string, unknown>, loaded: Record<string, unknown>) {
++    return Object.fromEntries(
++        Object.entries(config).filter(([key, value]) => value !== loaded[key])
++    )
++}

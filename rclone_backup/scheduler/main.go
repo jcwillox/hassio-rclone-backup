@@ -121,7 +121,7 @@ func main() {
 		}
 		err := CheckJob(job)
 		if err != nil {
-			Fatalln(err)
+			Fatalln("job", "'"+job.Name+"'", err)
 		}
 		config.Jobs[i] = job
 	}
@@ -203,7 +203,45 @@ func CheckJob(job JobConfig) error {
 			return err
 		}
 	}
+	if job.Command != "delete" {
+		if len(job.Destinations) == 0 {
+			return fmt.Errorf("command '%s' needs a destination", job.Command)
+		}
+		return nil
+	}
+	// delete removes files from its sources, so it must not reach local backups or every file
+	if len(job.Destinations) > 0 {
+		return errors.New("command 'delete' takes no destination; remove 'destination' and 'destinations'")
+	}
+	for _, source := range job.Sources {
+		if !strings.Contains(source, ":") {
+			return fmt.Errorf("command 'delete' source '%s' must be a remote, e.g. 'hassbackup:'", source)
+		}
+	}
+	if !HasFilter(job) {
+		return errors.New("command 'delete' needs a filter so it does not delete every file; set a 'min-age' flag, or 'include' or 'exclude'")
+	}
 	return nil
+}
+
+// filterFlags the rclone flags that limit which files a command acts on
+var filterFlags = []string{
+	"--min-age", "--max-age", "--min-size", "--max-size",
+	"--include", "--exclude", "--filter", "--include-from", "--exclude-from", "--filter-from", "--files-from",
+}
+
+// HasFilter whether the job limits the files it acts on
+func HasFilter(job JobConfig) bool {
+	if len(job.Include) > 0 || len(job.Exclude) > 0 {
+		return true
+	}
+	for _, arg := range append(FlagMapToList(job.Flags), job.ExtraFlags...) {
+		name, _, _ := strings.Cut(arg, "=")
+		if ArrayContains(filterFlags, name) {
+			return true
+		}
+	}
+	return false
 }
 
 func CheckRemote(path string) error {

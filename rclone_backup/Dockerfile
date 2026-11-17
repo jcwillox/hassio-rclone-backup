@@ -32,14 +32,23 @@ FROM --platform=$BUILDPLATFORM node:24-alpine AS webui
 ENV RCLONE_WEB_INSTALLED_VERSION=1.2.0
 WORKDIR /app
 
-COPY rclone-web/base-path.patch /tmp/base-path.patch
+COPY rclone-web/base-path.patch rclone-web/oauth-headless.patch rclone-web/no-serves.patch \
+    rclone-web/settings-save.patch rclone-web/option-choices.patch /tmp/
 
-# Patch rclone-web to run under a sub-path (Home Assistant ingress), then build it,
+# Patch rclone-web to run under a sub-path (Home Assistant ingress), to add browser-login
+# remotes headless (paste the token from `rclone authorize`), to remove Serves, Download and
+# self-update (a serve cannot be reached from outside the container), to fix saving the
+# config contents in Settings (an upstream bug), and to list every choice of an option with
+# examples (for example iCloud Photos), then build it,
 # failing if the built page still loads anything from an absolute path
 RUN apk add --no-cache patch \
     && wget -qO- https://github.com/rclone/rclone-web/archive/refs/tags/"${RCLONE_WEB_INSTALLED_VERSION}".tar.gz \
         | tar -xz --strip-components=1 \
     && patch -p1 --fuzz=0 < /tmp/base-path.patch \
+    && patch -p1 --fuzz=0 < /tmp/oauth-headless.patch \
+    && patch -p1 --fuzz=0 < /tmp/no-serves.patch \
+    && patch -p1 --fuzz=0 < /tmp/settings-save.patch \
+    && patch -p1 --fuzz=0 < /tmp/option-choices.patch \
     && npm ci --no-audit --no-fund \
     && npm run build \
     && grep -q 'src="./assets/' dist/index.html \

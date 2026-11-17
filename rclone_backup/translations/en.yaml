@@ -1,0 +1,18 @@
+---
+configuration:
+  jobs:
+    name: Jobs
+    description: The rclone jobs to run. See the Documentation tab for every option.
+    fields:
+      command:
+        name: Command
+        description: >-
+          copy: add new and changed files to the destination. sync: make the
+          destination match the source, deleting extra files there. move: copy,
+          then delete from the source. delete: delete files on a remote source;
+          set no destination, and set a filter such as the min-age flag.
+      schedule:
+        name: Schedule
+        description: >-
+          Cron: minute hour day month weekday (10 4 * * * is 04:10 every day).
+          Or @hourly, @daily, @weekly, @every 6h. Empty: run at start-up.
